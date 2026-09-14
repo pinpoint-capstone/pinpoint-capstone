@@ -1,8 +1,8 @@
-# PinPoint
+﻿# PinPoint
 
 AI-based Multimodal Video Moment Search Capstone Project
 
-PinPoint는 사용자가 자연어로 원하는 장면을 검색하면,  
+PinPoint는 사용자가 자연어로 원하는 장면을 검색하면,
 영상 내에서 해당 내용과 가장 관련 있는 구간을 찾아주는 멀티모달 영상 검색 서비스입니다.
 
 예시
@@ -25,15 +25,17 @@ PinPoint는 사용자가 자연어로 원하는 장면을 검색하면,
 
 ## Project Structure
 
-```text
-pinpoint-capstone/
-├── frontend/       # Web UI
-├── backend/        # API / Server
-├── ai/             # AI & Video Processing
-├── data/           # Dataset information
-├── docs/           # Project documents
-└── README.md
-```
+    pinpoint-capstone/
+    ├── frontend/           # Web UI
+    ├── backend/            # API / Server
+    ├── ai/
+    │   ├── preprocessing/  # Video preprocessing
+    │   ├── embedding/      # Video / Text embedding
+    │   ├── retrieval/      # Moment retrieval
+    │   └── experiments/    # Model experiments
+    ├── data/               # Dataset information
+    ├── docs/               # Project documents
+    └── README.md
 
 ---
 
@@ -49,25 +51,23 @@ pinpoint-capstone/
 
 ## AI Pipeline
 
-```text
-Video
- ↓
-Video Preprocessing
- ↓
-Segment / Frame Extraction
- ↓
-Video Embedding
- ↓
-Vector Database
- ↓
-Natural Language Query
- ↓
-Text Embedding
- ↓
-Similarity Search
- ↓
-Relevant Video Moment
-```
+    Video
+      ↓
+    Video Preprocessing
+      ↓
+    Segment / Frame Extraction
+      ↓
+    Video Embedding
+      ↓
+    Vector Database
+
+    Natural Language Query
+      ↓
+    Text Embedding
+      ↓
+    Similarity Search
+      ↓
+    Relevant Video Moment
 
 ---
 
