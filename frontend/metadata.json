@@ -1,0 +1,6 @@
+{
+  "name": "PinPoint AI",
+  "description": "자연어 기반 영상 구간 검색 웹 서비스 - 영상 속 원하는 순간을 자연어로 즉시 찾아주는 AI 비디오 서치 플랫폼",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
