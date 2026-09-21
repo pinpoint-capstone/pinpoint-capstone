@@ -26,6 +26,66 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [showShareToast, setShowShareToast] = useState<boolean>(false);
+  // 현재 선택된 구간이 이미 저장되어 있는지 확인
+useEffect(() => {
+  if (!selectedSegment) {
+    setIsSaved(false);
+    return;
+  }
+
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem('pinpoint-saved-segments') || '[]'
+    ) as SearchResultItem[];
+
+    const alreadySaved = saved.some(
+      (item) => item.segment_id === selectedSegment.segment_id
+    );
+
+    setIsSaved(alreadySaved);
+  } catch {
+    setIsSaved(false);
+  }
+}, [selectedSegment]);
+
+// 선택된 영상 구간 저장 / 저장 취소
+const handleSaveSegment = () => {
+  if (!selectedSegment) return;
+
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem('pinpoint-saved-segments') || '[]'
+    ) as SearchResultItem[];
+
+    const alreadySaved = saved.some(
+      (item) => item.segment_id === selectedSegment.segment_id
+    );
+
+    if (alreadySaved) {
+      const updated = saved.filter(
+        (item) => item.segment_id !== selectedSegment.segment_id
+      );
+
+      localStorage.setItem(
+        'pinpoint-saved-segments',
+        JSON.stringify(updated)
+      );
+
+      setIsSaved(false);
+    } else {
+      const updated = [selectedSegment, ...saved];
+
+      localStorage.setItem(
+        'pinpoint-saved-segments',
+        JSON.stringify(updated)
+      );
+
+      setIsSaved(true);
+    }
+  } catch (error) {
+    console.error('구간 저장 중 오류:', error);
+  }
+};
 
   // Handle external seek requests (e.g. clicking a search result or chapter)
   useEffect(() => {
@@ -257,7 +317,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <span>공유</span>
           </button>
           <button
-            onClick={() => setIsSaved(!isSaved)}
+            onClick={handleSaveSegment}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
               isSaved
                 ? 'border-blue-600 bg-blue-50 text-blue-600'

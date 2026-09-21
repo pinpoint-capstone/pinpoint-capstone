@@ -122,9 +122,53 @@ export default function App() {
     }
   };
 
-  const handleSelectResult = (item: SearchResultItem) => {
+ // 최근 본 구간 저장
+const saveRecentSegment = (item: SearchResultItem) => {
+  try {
+    const recent = JSON.parse(
+      localStorage.getItem('pinpoint-recent-segments') || '[]'
+    ) as SearchResultItem[];
+
+    // 같은 구간이 이미 있으면 기존 기록 제거
+    const filtered = recent.filter(
+      (recentItem) => recentItem.segment_id !== item.segment_id
+    );
+
+    // 가장 최근에 본 구간을 맨 앞으로
+    const updated = [item, ...filtered].slice(0, 20);
+
+    localStorage.setItem(
+      'pinpoint-recent-segments',
+      JSON.stringify(updated)
+    );
+  } catch (error) {
+    console.error('최근 본 구간 저장 중 오류:', error);
+  }
+};
+
+const handleSelectResult = (item: SearchResultItem) => {
+  setSelectedSegment(item);
+  setCurrentVideoId(item.video_id);
+  saveRecentSegment(item);
+};
+
+  // 라이브러리에 저장된 구간 다시 열기
+  const handleOpenLibrarySegment = (item: SearchResultItem) => {
     setSelectedSegment(item);
     setCurrentVideoId(item.video_id);
+    saveRecentSegment(item);
+
+    // 검색 결과 영역에서도 현재 구간이 보이도록 설정
+    setSearchResults([item]);
+
+    setCurrentView('player');
+
+    if (
+      typeof window !== 'undefined' &&
+      window.location.pathname !== '/search'
+    ) {
+      window.history.pushState(null, '', '/search');
+    }
   };
 
   const handleNavigateHome = () => {
@@ -237,7 +281,9 @@ export default function App() {
         />
       )}
 
-      {currentView === 'library' && <LibraryView />}
+      {currentView === 'library' && (
+        <LibraryView onOpenSegment={handleOpenLibrarySegment} />
+      )}
     </div>
   );
 }
