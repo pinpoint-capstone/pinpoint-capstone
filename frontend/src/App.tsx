@@ -31,8 +31,7 @@ export default function App() {
   });
 
   const [searchQuery, setSearchQuery] = useState<string>(
-    '에어팟 프로 2 배터리를 설명하는 부분'
-  );
+    '');
 
   const [videosMap] = useState<Record<string, VideoMetadata>>(MOCK_VIDEOS);
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
@@ -224,6 +223,16 @@ const handleSelectResult = (item: SearchResultItem) => {
     }
   };
 
+  const handleLogout = () => {
+  localStorage.removeItem('pinpoint-user');
+  setUser(null);
+  setCurrentView('home');
+
+  if (typeof window !== 'undefined') {
+    window.history.pushState(null, '', '/');
+  }
+};
+
   const activeVideo =
     videosMap[currentVideoId] ||
     videosMap['abc123'] ||
@@ -240,6 +249,7 @@ const handleSelectResult = (item: SearchResultItem) => {
         onNavigateBrowse={handleNavigateBrowse}
         onNavigateAuth={handleNavigateAuth}
         onNavigateLibrary={handleNavigateLibrary}
+        onLogout={handleLogout}
         user={user}
       />
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Search, Mic, X } from 'lucide-react';
+import { Play, Search, Mic, X, User } from 'lucide-react';
 
 interface HeaderProps {
   currentView: 'home' | 'player' | 'browse' | 'auth' | 'library';
@@ -10,6 +10,7 @@ interface HeaderProps {
   onNavigateBrowse?: () => void;
   onNavigateAuth?: () => void;
   onNavigateLibrary?: () => void;
+  onLogout?: () => void;
   user?: {
     name: string;
     email: string;
@@ -25,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateBrowse,
   onNavigateAuth,
   onNavigateLibrary,
+  onLogout,
   user,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -147,22 +149,34 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* 프로필 */}
-        <div className="flex items-center">
-          <button
-            id="user-profile-avatar"
-            type="button"
-            onClick={onNavigateAuth}
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-900 text-white flex items-center justify-center font-medium text-xs border border-white shadow-2xs ring-1 ring-slate-200 cursor-pointer overflow-hidden hover:ring-blue-400 transition-all shrink-0"
-            title={user ? `${user.name} 프로필` : '로그인'}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          </button>
-        </div>
+        {/* 프로필 / 로그인 상태 */}
+<div className="flex items-center gap-3">
+  {user ? (
+    <>
+      <span className="hidden sm:inline text-sm font-semibold text-slate-800">
+  {user.name}님
+</span>
+
+      <button
+        type="button"
+        onClick={onLogout}
+        className="text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+      >
+        로그아웃
+      </button>
+    </>
+  ) : (
+    <button
+      id="user-profile-avatar"
+      type="button"
+      onClick={onNavigateAuth}
+      className="w-8 h-8 rounded-full bg-slate-300 text-white flex items-center justify-center border border-white shadow-2xs ring-1 ring-slate-200 cursor-pointer hover:bg-slate-400 hover:ring-slate-300 transition-all shrink-0"
+      title="로그인"
+    >
+      <User className="w-4 h-4" />
+    </button>
+  )}
+</div>
 
       </div>
     </header>
