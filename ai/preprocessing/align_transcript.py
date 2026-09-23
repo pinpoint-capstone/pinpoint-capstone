@@ -1,21 +1,38 @@
+import os
 import json
 from pathlib import Path
 
+from video_metadata import get_video_metadata
+
+
+video_path = Path(
+    os.getenv(
+        "PINPOINT_VIDEO_PATH",
+        "data/raw/test_audio.mp4"
+    )
+)
+
+video_id = os.getenv(
+    "PINPOINT_VIDEO_ID",
+    "video_001"
+)
 
 subtitle_path = Path(
-    "data/processed/video_001/subtitle.json"
+    f"data/processed/{video_id}/subtitle.json"
 )
 
 output_path = Path(
-    "data/processed/video_001/segments_with_subtitles.json"
+    f"data/processed/{video_id}/segments_with_subtitles.json"
 )
-
-video_id = "video_001"
 
 segment_length = 10
 overlap = 5
-duration = 54.32
 
+metadata = get_video_metadata(
+    str(video_path)
+)
+
+duration = metadata["duration"]
 
 # --------------------------------------------------
 # 자막 불러오기
@@ -53,7 +70,7 @@ while start_time < duration:
     )
 
     frame_folder = (
-        f"seg_{segment_number:04d}"
+        f"{video_id}_seg_{segment_number:04d}"
     )
 
 
