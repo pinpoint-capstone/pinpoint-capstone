@@ -33,10 +33,10 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 CLIP_LEN = 2
 
 CHECKPOINT_PATH = (
-    MOMENT_DETR_ROOT
-    / "results"
-    / "hl-video_tef-scratch_clip_align-2026_09_29_14_23_39"
-    / "model_best.ckpt"
+    PROJECT_ROOT
+    / "models"
+    / "moment_detr"
+    / "scratch_clip_align_best.ckpt"
 )
 
 
