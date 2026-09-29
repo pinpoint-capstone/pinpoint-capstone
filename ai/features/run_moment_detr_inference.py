@@ -10,7 +10,7 @@ import torch.nn.functional as F
 # ==================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-MOMENT_DETR_ROOT = PROJECT_ROOT / "ai" / "external" / "moment_detr"
+MOMENT_DETR_ROOT = PROJECT_ROOT / "ai" / "vendor" / "moment_detr"
 
 sys.path.append(str(MOMENT_DETR_ROOT))
 
@@ -282,27 +282,17 @@ def predict_moment(
     # 7. Best prediction
     # ----------------------------------------------
 
-    top_predictions = []
+    start_time, end_time, score = predictions[0]
 
-    for start_time, end_time, score in predictions[:5]:
-        start_time = max(0.0, min(start_time, video_duration))
-        end_time = max(start_time, min(end_time, video_duration))
-
-        top_predictions.append({
-            "start_time": round(start_time, 4),
-            "end_time": round(end_time, 4),
-            "score": round(score, 4)
-        })
-
-    best_prediction = top_predictions[0]
+    start_time = max(0.0, min(start_time, video_duration))
+    end_time = max(start_time, min(end_time, video_duration))
 
     return {
         "video_id": video_id,
         "query": query,
-        "start_time": best_prediction["start_time"],
-        "end_time": best_prediction["end_time"],
-        "score": best_prediction["score"],
-        "top_predictions": top_predictions
+        "start_time": round(start_time, 4),
+        "end_time": round(end_time, 4),
+        "score": round(score, 4)
     }
 
 

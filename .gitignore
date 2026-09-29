@@ -12,5 +12,14 @@ venv/
 .DS_Store
 Thumbs.db
 
-ai/external/
 data/features/
+
+# Moment-DETR: keep source code, ignore large artifacts
+ai/external/moment_detr/features/
+ai/external/moment_detr/results/
+ai/external/moment_detr/data/
+ai/external/moment_detr/tmp/
+ai/external/moment_detr/run_on_video/moment_detr_ckpt/
+ai/external/moment_detr/**/__pycache__/
+ai/external/moment_detr/**/*.pyc
+ai/external/
