@@ -34,8 +34,8 @@ CLIP_LEN = 2
 
 CHECKPOINT_PATH = (
     MOMENT_DETR_ROOT
-    / "run_on_video"
-    / "moment_detr_ckpt"
+    / "results"
+    / "hl-video_tef-scratch_clip_align-2026_09_29_14_23_39"
     / "model_best.ckpt"
 )
 
@@ -282,18 +282,27 @@ def predict_moment(
     # 7. Best prediction
     # ----------------------------------------------
 
-    start_time, end_time, score = predictions[0]
+    top_predictions = []
 
-    # 영상 범위를 벗어나지 않도록 보정
-    start_time = max(0.0, min(start_time, video_duration))
-    end_time = max(start_time, min(end_time, video_duration))
+    for start_time, end_time, score in predictions[:5]:
+        start_time = max(0.0, min(start_time, video_duration))
+        end_time = max(start_time, min(end_time, video_duration))
+
+        top_predictions.append({
+            "start_time": round(start_time, 4),
+            "end_time": round(end_time, 4),
+            "score": round(score, 4)
+        })
+
+    best_prediction = top_predictions[0]
 
     return {
         "video_id": video_id,
         "query": query,
-        "start_time": round(start_time, 4),
-        "end_time": round(end_time, 4),
-        "score": round(score, 4)
+        "start_time": best_prediction["start_time"],
+        "end_time": best_prediction["end_time"],
+        "score": best_prediction["score"],
+        "top_predictions": top_predictions
     }
 
 
