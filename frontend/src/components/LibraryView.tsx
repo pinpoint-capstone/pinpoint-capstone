@@ -18,6 +18,15 @@ interface LibraryViewProps {
   onOpenSegment: (item: SearchResultItem) => void;
 }
 
+interface BackendFavorite {
+  favorite_id: string;
+  user_id?: string;
+  video_id: string;
+  start_time: number;
+  end_time: number;
+  created_at?: string;
+}
+
 export const LibraryView: React.FC<LibraryViewProps> = ({
   onOpenSegment,
 }) => {
@@ -26,38 +35,185 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [savedSegments, setSavedSegments] = useState<SearchResultItem[]>([]);
   const [recentSegments, setRecentSegments] = useState<SearchResultItem[]>([]);
 
-  // 저장한 구간 + 최근 본 구간 불러오기
+  // 같은 구간이 DB에 여러 번 저장된 경우까지 처리하기 위해
+  // key 하나당 favorite_id 배열을 저장
+  const [favoriteIds, setFavoriteIds] = useState<Record<string, string[]>>({});
+
+  // 저장한 구간(DB) + 최근 본 구간(localStorage) 불러오기
   useEffect(() => {
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem('pinpoint-saved-segments') || '[]'
-      ) as SearchResultItem[];
+    const loadLibraryData = async () => {
+      try {
+        const localSaved = JSON.parse(
+          localStorage.getItem('pinpoint-saved-segments') || '[]'
+        ) as SearchResultItem[];
 
-      const recent = JSON.parse(
-        localStorage.getItem('pinpoint-recent-segments') || '[]'
-      ) as SearchResultItem[];
+        const recent = JSON.parse(
+          localStorage.getItem('pinpoint-recent-segments') || '[]'
+        ) as SearchResultItem[];
 
-      setSavedSegments(saved);
-      setRecentSegments(recent);
-    } catch (error) {
-      console.error('라이브러리 데이터를 불러오는 중 오류:', error);
-      setSavedSegments([]);
-      setRecentSegments([]);
-    }
+        setRecentSegments(recent);
+
+        const accessToken = localStorage.getItem('pinpoint-access-token');
+
+        // 로그인 토큰이 없으면 기존 localStorage 데이터 사용
+        if (!accessToken) {
+          setSavedSegments(localSaved);
+          return;
+        }
+
+        const response = await fetch(
+          'http://127.0.0.1:8000/api/users/me/favorites',
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.error(
+            '즐겨찾기 조회 실패:',
+            response.status,
+            await response.text()
+          );
+
+          // 조회 실패 시 기존 localStorage 데이터 유지
+          setSavedSegments(localSaved);
+          return;
+        }
+
+        const data = await response.json();
+
+        console.log('백엔드 즐겨찾기 조회 성공:', data);
+
+        const backendFavorites: BackendFavorite[] = Array.isArray(data.favorites)
+          ? data.favorites
+          : [];
+
+        // DB favorite_id들을 구간별로 저장
+        const favoriteIdMap: Record<string, string[]> = {};
+
+        backendFavorites.forEach((favorite) => {
+          if (!favorite.favorite_id) return;
+
+          const key = `${favorite.video_id}-${Number(
+            favorite.start_time
+          )}-${Number(favorite.end_time)}`;
+
+          if (!favoriteIdMap[key]) {
+            favoriteIdMap[key] = [];
+          }
+
+          favoriteIdMap[key].push(favorite.favorite_id);
+        });
+
+        setFavoriteIds(favoriteIdMap);
+
+        // 백엔드에 실제 존재하는 즐겨찾기만
+        // localStorage의 상세 검색 결과와 연결
+        const syncedSaved = localSaved.filter((localItem) =>
+          backendFavorites.some(
+            (favorite) =>
+              favorite.video_id === localItem.video_id &&
+              Number(favorite.start_time) ===
+                Number(localItem.start_time) &&
+              Number(favorite.end_time) ===
+                Number(localItem.end_time)
+          )
+        );
+
+        setSavedSegments(syncedSaved);
+      } catch (error) {
+        console.error('라이브러리 데이터를 불러오는 중 오류:', error);
+
+        try {
+          const localSaved = JSON.parse(
+            localStorage.getItem('pinpoint-saved-segments') || '[]'
+          ) as SearchResultItem[];
+
+          setSavedSegments(localSaved);
+        } catch {
+          setSavedSegments([]);
+        }
+      }
+    };
+
+    loadLibraryData();
   }, []);
 
   // 저장한 구간 삭제
-  const handleDeleteSavedSegment = (segmentId: string) => {
-    const updated = savedSegments.filter(
-      (item) => item.segment_id !== segmentId
+  const handleDeleteSavedSegment = async (segmentId: string) => {
+    const segment = savedSegments.find(
+      (item) => item.segment_id === segmentId
     );
 
-    setSavedSegments(updated);
+    if (!segment) return;
 
-    localStorage.setItem(
-      'pinpoint-saved-segments',
-      JSON.stringify(updated)
-    );
+    const accessToken = localStorage.getItem('pinpoint-access-token');
+
+    if (!accessToken) {
+      alert('로그인 후 이용해주세요.');
+      return;
+    }
+
+    const key = `${segment.video_id}-${Number(
+      segment.start_time
+    )}-${Number(segment.end_time)}`;
+
+    const ids = favoriteIds[key];
+
+    if (!ids || ids.length === 0) {
+      alert('즐겨찾기 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      // 같은 구간이 테스트 과정에서 여러 번 저장됐다면 전부 삭제
+      const responses = await Promise.all(
+        ids.map((favoriteId) =>
+          fetch(
+            `http://127.0.0.1:8000/api/users/me/favorites/${favoriteId}`,
+            {
+              method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          )
+        )
+      );
+
+      const failed = responses.some((response) => !response.ok);
+
+      if (failed) {
+        console.error('일부 즐겨찾기 삭제 실패');
+        alert('저장한 구간 삭제에 실패했습니다.');
+        return;
+      }
+
+      const updated = savedSegments.filter(
+        (item) => item.segment_id !== segmentId
+      );
+
+      setSavedSegments(updated);
+
+      localStorage.setItem(
+        'pinpoint-saved-segments',
+        JSON.stringify(updated)
+      );
+
+      setFavoriteIds((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+
+      console.log('즐겨찾기 삭제 성공');
+    } catch (error) {
+      console.error('즐겨찾기 삭제 중 오류:', error);
+      alert('저장한 구간 삭제 중 오류가 발생했습니다.');
+    }
   };
 
   // 최근 본 구간 삭제

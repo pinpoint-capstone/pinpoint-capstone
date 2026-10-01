@@ -49,8 +49,15 @@ useEffect(() => {
 }, [selectedSegment]);
 
 // 선택된 영상 구간 저장 / 저장 취소
-const handleSaveSegment = () => {
+const handleSaveSegment = async () => {
   if (!selectedSegment) return;
+
+  const accessToken = localStorage.getItem('pinpoint-access-token');
+
+  if (!accessToken) {
+    alert('로그인 후 이용해주세요.');
+    return;
+  }
 
   try {
     const saved = JSON.parse(
@@ -61,7 +68,16 @@ const handleSaveSegment = () => {
       (item) => item.segment_id === selectedSegment.segment_id
     );
 
+    // =========================
+    // 저장 취소
+    // =========================
     if (alreadySaved) {
+      /*
+       * 아직 프론트에는 backend의 favorite_id를 저장하고 있지 않기 때문에
+       * DELETE API 연결은 다음 단계에서 처리.
+       *
+       * 우선 기존 localStorage 저장 취소 기능은 그대로 유지한다.
+       */
       const updated = saved.filter(
         (item) => item.segment_id !== selectedSegment.segment_id
       );
@@ -72,18 +88,59 @@ const handleSaveSegment = () => {
       );
 
       setIsSaved(false);
-    } else {
-      const updated = [selectedSegment, ...saved];
-
-      localStorage.setItem(
-        'pinpoint-saved-segments',
-        JSON.stringify(updated)
-      );
-
-      setIsSaved(true);
+      return;
     }
+
+    // =========================
+    // 새 즐겨찾기 저장
+    // =========================
+    const response = await fetch(
+      'http://127.0.0.1:8000/api/users/me/favorites',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          video_id: selectedSegment.video_id,
+          start_time: selectedSegment.start_time,
+          end_time: selectedSegment.end_time,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('즐겨찾기 저장 실패:', data);
+
+      if (response.status === 401) {
+        alert('로그인 정보가 만료되었습니다. 다시 로그인해주세요.');
+      } else {
+        alert('구간 저장에 실패했습니다.');
+      }
+
+      return;
+    }
+
+    console.log('백엔드 즐겨찾기 저장 성공:', data);
+
+    /*
+     * 기존 Library 화면을 깨지 않기 위해
+     * SearchResultItem 전체는 기존처럼 localStorage에도 저장.
+     */
+    const updated = [selectedSegment, ...saved];
+
+    localStorage.setItem(
+      'pinpoint-saved-segments',
+      JSON.stringify(updated)
+    );
+
+    setIsSaved(true);
   } catch (error) {
     console.error('구간 저장 중 오류:', error);
+    alert('구간 저장 중 오류가 발생했습니다.');
   }
 };
 

@@ -1,8 +1,8 @@
 import { VideoMetadata, SearchResponse } from '../types';
 
 export const MOCK_VIDEOS: Record<string, VideoMetadata> = {
-  abc123: {
-    video_id: 'abc123',
+  'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11': {
+    video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     title: 'AirPods Pro 2세대 심층 분석 및 실사용 배터리 테스트 리포트',
     category: 'tech',
     categoryLabel: '제품 리뷰',
@@ -83,8 +83,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
     query: '에어팟 프로 2 배터리를 설명하는 부분',
     results: [
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4, // 03:23
         end_time: 241.7,   // 04:01
         score: 0.96
@@ -116,8 +116,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
     query: '제품의 배터리를 설명하는 부분',
     results: [
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4,
         end_time: 241.7,
         score: 0.96
@@ -149,8 +149,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
         score: 0.97
       },
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_004',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_004',
         start_time: 45.0,
         end_time: 82.0,
         score: 0.82
@@ -182,8 +182,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
         score: 0.81
       },
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4,
         end_time: 241.7,
         score: 0.72
@@ -201,8 +201,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
         score: 0.95
       },
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4,
         end_time: 241.7,
         score: 0.84
@@ -220,8 +220,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
     query: '에어팟 프로2 배터리를 설명하는 부분',
     results: [
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4,
         end_time: 241.7,
         score: 0.96
@@ -260,8 +260,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
         score: 0.97
       },
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_004',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_004',
         start_time: 45.0,
         end_time: 82.0,
         score: 0.85
@@ -293,8 +293,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
         score: 0.82
       },
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4,
         end_time: 241.7,
         score: 0.74
@@ -312,8 +312,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
         score: 0.96
       },
       {
-        video_id: 'abc123',
-        segment_id: 'abc123_seg_021',
+        video_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        segment_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11_seg_021',
         start_time: 203.4,
         end_time: 241.7,
         score: 0.86
@@ -338,7 +338,7 @@ export const RECOMMENDED_QUERIES = [
 
 export const SHOWCASE_VIDEOS = [
   {
-    videoId: 'abc123',
+    videoId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     category: '제품 리뷰',
     categoryBadgeClass: 'bg-blue-600/90 text-white',
     categoryIcon: 'Laptop',
