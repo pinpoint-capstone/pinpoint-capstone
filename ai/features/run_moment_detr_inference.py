@@ -296,6 +296,503 @@ def predict_moment(
     }
 
 
+
+# ==================================================
+# Hybrid start-time refinement
+# ==================================================
+
+import json
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from run_on_video.clip import clip
+
+
+SUBTITLE_THRESHOLD = 0.35
+START_OFFSET = 1.5
+VISUAL_TOP_K = 8
+
+_REFINE_CLIP_MODEL = None
+
+
+def get_refine_clip_model():
+    global _REFINE_CLIP_MODEL
+
+    if _REFINE_CLIP_MODEL is None:
+        print("[AI] Loading CLIP for visual refinement...")
+
+        _REFINE_CLIP_MODEL, _ = clip.load(
+            "ViT-B/32",
+            device=DEVICE,
+            jit=False
+        )
+
+        _REFINE_CLIP_MODEL.eval()
+
+    return _REFINE_CLIP_MODEL
+
+
+def _search_subtitle_start(
+    query,
+    subtitle_json_path
+):
+    """
+    인접 자막 1~3개를 합친 window에 대해
+    character n-gram TF-IDF 검색.
+
+    Returns:
+        None 또는 {
+            score,
+            start,
+            end,
+            text
+        }
+    """
+
+    subtitle_json_path = Path(
+        subtitle_json_path
+    )
+
+    if not subtitle_json_path.exists():
+        return None
+
+    with open(
+        subtitle_json_path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+        subtitles = json.load(f)
+
+    if not subtitles:
+        return None
+
+    windows = []
+
+    for window_size in (1, 2, 3):
+
+        for i in range(
+            len(subtitles) - window_size + 1
+        ):
+            group = subtitles[
+                i:i + window_size
+            ]
+
+            windows.append({
+                "start": float(
+                    group[0]["start_time"]
+                ),
+                "end": float(
+                    group[-1]["end_time"]
+                ),
+                "text": " ".join(
+                    x["text"].strip()
+                    for x in group
+                )
+            })
+
+    if not windows:
+        return None
+
+    corpus = [
+        x["text"]
+        for x in windows
+    ]
+
+    vectorizer = TfidfVectorizer(
+        lowercase=True,
+        analyzer="char_wb",
+        ngram_range=(3, 5),
+        min_df=1
+    )
+
+    subtitle_matrix = (
+        vectorizer.fit_transform(
+            corpus
+        )
+    )
+
+    query_vector = vectorizer.transform(
+        [query]
+    )
+
+    scores = cosine_similarity(
+        query_vector,
+        subtitle_matrix
+    )[0]
+
+    best_idx = int(
+        scores.argmax()
+    )
+
+    best = windows[best_idx]
+
+    return {
+        "score": float(
+            scores[best_idx]
+        ),
+        "start": best["start"],
+        "end": best["end"],
+        "text": best["text"]
+    }
+
+
+@torch.no_grad()
+def _encode_refine_query(query):
+
+    clip_model = get_refine_clip_model()
+
+    tokens = clip.tokenize(
+        [query]
+    ).to(DEVICE)
+
+    output = clip_model.encode_text(
+        tokens
+    )
+
+    query_feat = output[
+        "pooler_output"
+    ].float()
+
+    query_feat = F.normalize(
+        query_feat,
+        dim=-1,
+        eps=1e-6
+    )
+
+    return query_feat[0]
+
+
+def _smooth_scores(scores):
+    """
+    자기 자신 + 앞뒤 1개 bin의 평균.
+    """
+
+    smoothed = torch.zeros_like(
+        scores
+    )
+
+    for i in range(len(scores)):
+
+        left = max(
+            0,
+            i - 1
+        )
+
+        right = min(
+            len(scores),
+            i + 2
+        )
+
+        smoothed[i] = scores[
+            left:right
+        ].mean()
+
+    return smoothed
+
+
+def _make_contiguous_clusters(indices):
+    """
+    정렬된 bin 번호를 연속 구간으로 묶음.
+    예: [3, 5, 6, 20, 21, 22]
+       -> [[3], [5,6], [20,21,22]]
+    """
+
+    if not indices:
+        return []
+
+    indices = sorted(indices)
+
+    clusters = [
+        [indices[0]]
+    ]
+
+    for idx in indices[1:]:
+
+        if idx == clusters[-1][-1] + 1:
+            clusters[-1].append(idx)
+
+        else:
+            clusters.append(
+                [idx]
+            )
+
+    return clusters
+
+
+@torch.no_grad()
+def _refine_visual_start(
+    query,
+    video_feature_path,
+    span_start,
+    span_end
+):
+    """
+    Moment-DETR 후보 내부의 2초 CLIP bin을 검색한 후
+    smoothing + 연속 cluster 기반으로 시작 시점 보정.
+    """
+
+    video_feats = torch.load(
+        video_feature_path,
+        map_location=DEVICE
+    ).float()
+
+    video_feats = F.normalize(
+        video_feats,
+        dim=-1,
+        eps=1e-6
+    )
+
+    query_feat = _encode_refine_query(
+        query
+    )
+
+    start_idx = max(
+        0,
+        int(
+            span_start // CLIP_LEN
+        )
+    )
+
+    end_idx = min(
+        len(video_feats),
+        int(
+            span_end // CLIP_LEN
+        ) + 1
+    )
+
+    if end_idx <= start_idx:
+        return max(
+            0.0,
+            float(span_start)
+        )
+
+    feats = video_feats[
+        start_idx:end_idx
+    ]
+
+    raw_scores = feats @ query_feat
+
+    smoothed = _smooth_scores(
+        raw_scores
+    )
+
+    k = min(
+        VISUAL_TOP_K,
+        len(smoothed)
+    )
+
+    _, local_indices = torch.topk(
+        smoothed,
+        k=k
+    )
+
+    # 실제 전체 video bin 번호
+    global_indices = [
+        start_idx + int(i)
+        for i in local_indices.tolist()
+    ]
+
+    clusters = _make_contiguous_clusters(
+        global_indices
+    )
+
+    # 연속 bin이 2개 이상인 cluster 우선
+    multi_clusters = [
+        c
+        for c in clusters
+        if len(c) >= 2
+    ]
+
+    if multi_clusters:
+
+        def cluster_score(cluster):
+
+            local = [
+                idx - start_idx
+                for idx in cluster
+            ]
+
+            values = smoothed[
+                torch.tensor(
+                    local,
+                    device=smoothed.device
+                )
+            ]
+
+            # 긴 연속구간을 우선하되
+            # 평균 similarity도 반영
+            return (
+                len(cluster),
+                float(values.mean().item())
+            )
+
+        best_cluster = max(
+            multi_clusters,
+            key=cluster_score
+        )
+
+        selected_bin = min(
+            best_cluster
+        )
+
+    else:
+
+        # 연속 cluster가 없으면
+        # smoothing Top-1 사용
+        best_local = int(
+            torch.argmax(
+                smoothed
+            ).item()
+        )
+
+        selected_bin = (
+            start_idx
+            + best_local
+        )
+
+    raw_start = (
+        selected_bin
+        * CLIP_LEN
+    )
+
+    final_start = max(
+        0.0,
+        raw_start - START_OFFSET
+    )
+
+    return float(
+        final_start
+    )
+
+
+def predict_moment_hybrid(
+    video_id,
+    video_feature_path,
+    query,
+    subtitle_json_path=None,
+    video_duration=None
+):
+    """
+    서비스용 Hybrid inference.
+
+    1. Visual-only Moment-DETR 실행
+    2. subtitle TF-IDF score >= threshold:
+       subtitle start 사용
+    3. 그 외:
+       Moment-DETR 후보 내부 visual CLIP
+       smoothing + cluster refinement
+    """
+
+    visual_result = predict_moment(
+        video_id=video_id,
+        video_feature_path=video_feature_path,
+        query=query,
+        video_duration=video_duration
+    )
+
+    visual_start = float(
+        visual_result["start_time"]
+    )
+
+    visual_end = float(
+        visual_result["end_time"]
+    )
+
+    subtitle_result = None
+
+    if subtitle_json_path is not None:
+
+        subtitle_result = (
+            _search_subtitle_start(
+                query=query,
+                subtitle_json_path=(
+                    subtitle_json_path
+                )
+            )
+        )
+
+    # ----------------------------------------------
+    # Subtitle confidence 충분
+    # ----------------------------------------------
+
+    if (
+        subtitle_result is not None
+        and subtitle_result["score"]
+        >= SUBTITLE_THRESHOLD
+    ):
+
+        final_start = max(
+            0.0,
+            subtitle_result["start"]
+            - START_OFFSET
+        )
+
+        # end는 현재 backend contract 유지를 위해 반환.
+        # 실제 서비스에서는 start_time이 핵심.
+        final_end = max(
+            visual_end,
+            subtitle_result["end"],
+            final_start
+        )
+
+    # ----------------------------------------------
+    # Subtitle confidence 낮음 / subtitle 없음
+    # ----------------------------------------------
+
+    else:
+
+        final_start = (
+            _refine_visual_start(
+                query=query,
+                video_feature_path=(
+                    video_feature_path
+                ),
+                span_start=visual_start,
+                span_end=visual_end
+            )
+        )
+
+        final_end = max(
+            visual_end,
+            final_start
+        )
+
+    if video_duration is not None:
+
+        duration = float(
+            video_duration
+        )
+
+        final_start = min(
+            final_start,
+            duration
+        )
+
+        final_end = min(
+            max(
+                final_end,
+                final_start
+            ),
+            duration
+        )
+
+    return {
+        "video_id": video_id,
+        "query": query,
+        "start_time": round(
+            final_start,
+            4
+        ),
+        "end_time": round(
+            final_end,
+            4
+        ),
+        "score": visual_result[
+            "score"
+        ]
+    }
+
+
+
 # ==================================================
 # 단독 테스트
 # ==================================================

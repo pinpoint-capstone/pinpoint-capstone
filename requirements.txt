@@ -9,8 +9,8 @@ ffmpeg-python
 ftfy
 regex
 matplotlib
-scikit-learn
 easydict
 tensorboard
 tqdm
 tabulate
+scikit-learn==1.9.1
