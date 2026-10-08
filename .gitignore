@@ -19,3 +19,4 @@ cookies*.txt
 .env
 venv/
 __pycache__/
+data/features/
