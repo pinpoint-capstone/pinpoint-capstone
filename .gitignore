@@ -7,16 +7,20 @@ __pycache__/
 .venv/
 venv/
 .env
+cookies*.txt
 
 .vscode/
 .DS_Store
 Thumbs.db
 
+data/features/
+
+# Moment-DETR: keep source code, ignore large artifacts
+ai/external/moment_detr/features/
+ai/external/moment_detr/results/
+ai/external/moment_detr/data/
+ai/external/moment_detr/tmp/
+ai/external/moment_detr/run_on_video/moment_detr_ckpt/
+ai/external/moment_detr/**/__pycache__/
+ai/external/moment_detr/**/*.pyc
 ai/external/
-data/features/
-data/raw/
-cookies*.txt
-.env
-venv/
-__pycache__/
-data/features/
