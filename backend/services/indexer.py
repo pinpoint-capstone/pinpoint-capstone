@@ -30,6 +30,17 @@ def build_feature(video_path: str, video_id: str) -> str:
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+def _to_stored_path(p: str) -> str:
+    """레포 안의 경로는 상대경로(슬래시)로 저장합니다."""
+    try:
+        return Path(p).resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(p)
+
+
+def resolve_path(stored: str) -> Path:
+    p = Path(stored)
+    return p if p.is_absolute() else ROOT / p
 
 def get_video(youtube_video_id: str) -> dict | None:
     res = (
@@ -137,7 +148,7 @@ def run_indexing(video_id: str, youtube_video_id: str) -> None:
     video_path = None
     try:
         video_path = download_video(youtube_video_id, out_dir=str(RAW_DIR))
-        feature_path = build_feature(str(video_path), youtube_video_id)
+        feature_path = _to_stored_path(build_feature(str(video_path), youtube_video_id))
         supabase.table("video_features").delete().eq("video_id", video_id).execute()
         supabase.table("video_features").insert({
             "video_id": video_id,

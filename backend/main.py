@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 import os
 import uuid
 
-load_dotenv()
+from pathlib import Path
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -162,3 +164,10 @@ def get_favorites(user_id: str = Depends(get_current_user)):
         .execute()
     )
     return {"favorites": response.data}
+
+try:
+    from .services.search_api import create_search_router
+except ImportError:
+    from services.search_api import create_search_router
+
+app.include_router(create_search_router(get_current_user))
