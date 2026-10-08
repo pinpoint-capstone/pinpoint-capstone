@@ -1,6 +1,9 @@
 from pathlib import Path
 import sys
+import math
+import subprocess
 
+import numpy as np
 import torch
 
 
@@ -67,6 +70,166 @@ def get_feature_extractor():
         )
 
     return _EXTRACTOR
+
+
+
+@torch.no_grad()
+def _encode_video_fast(
+    video_path,
+    extractor,
+    bsz=60
+):
+    """
+    ffmpeg subprocess로 2초 간격 frame을 직접 추출한 뒤
+    기존 CLIP encoder를 사용한다.
+    """
+
+    loader = extractor.video_loader
+
+    info = loader._get_video_info(
+        str(video_path)
+    )
+
+    h = info["height"]
+    w = info["width"]
+
+    height, width = loader._get_output_dim(
+        h,
+        w
+    )
+
+    fps = loader.framerate
+
+    duration = info.get(
+        "duration",
+        -1
+    )
+
+    if (
+        duration > 0
+        and duration < 1 / fps + 0.1
+    ):
+        fps = 2 / max(
+            int(duration),
+            1
+        )
+
+    filters = [
+        f"fps={fps}",
+        f"scale={width}:{height}"
+    ]
+
+    if loader.centercrop:
+
+        x = int(
+            (width - loader.size)
+            / 2.0
+        )
+
+        y = int(
+            (height - loader.size)
+            / 2.0
+        )
+
+        filters.append(
+            f"crop={loader.size}:"
+            f"{loader.size}:{x}:{y}"
+        )
+
+        out_h = loader.size
+        out_w = loader.size
+
+    else:
+
+        out_h = height
+        out_w = width
+
+    cmd = [
+        "ffmpeg",
+        "-v", "error",
+        "-i", str(video_path),
+        "-vf", ",".join(filters),
+        "-f", "rawvideo",
+        "-pix_fmt", "rgb24",
+        "pipe:1",
+    ]
+
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True
+    )
+
+    frame_size = (
+        out_h
+        * out_w
+        * 3
+    )
+
+    if len(result.stdout) % frame_size != 0:
+        raise RuntimeError(
+            "Invalid raw video byte size"
+        )
+
+    video = np.frombuffer(
+        result.stdout,
+        dtype=np.uint8
+    ).reshape(
+        -1,
+        out_h,
+        out_w,
+        3
+    )
+
+    # writable copy
+    video = video.copy()
+
+    video = torch.from_numpy(
+        video
+    ).float()
+
+    video = video.permute(
+        0,
+        3,
+        1,
+        2
+    )
+
+    video = extractor.video_preprocessor(
+        video
+    )
+
+    n_frames = len(video)
+
+    features = []
+
+    for start in range(
+        0,
+        n_frames,
+        bsz
+    ):
+
+        batch = video[
+            start:start + bsz
+        ].to(
+            extractor.device
+        )
+
+        output = (
+            extractor
+            .clip_extractor
+            .encode_image(batch)
+        )
+
+        features.append(
+            output
+        )
+
+    return torch.cat(
+        features,
+        dim=0
+    )
 
 
 # ==================================================
@@ -171,8 +334,9 @@ def build_feature(
 
     extractor = get_feature_extractor()
 
-    video_features = extractor.encode_video(
-        str(video_path)
+    video_features = _encode_video_fast(
+        video_path=video_path,
+        extractor=extractor
     )
 
     # 안전하게 CPU tensor로 저장
