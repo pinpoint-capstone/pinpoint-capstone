@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header, Depends
 from pydantic import BaseModel
 from supabase import create_client
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 import uuid
@@ -17,6 +18,13 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ===================== 인증 =====================
 
