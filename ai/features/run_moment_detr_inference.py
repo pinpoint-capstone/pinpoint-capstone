@@ -297,6 +297,277 @@ def predict_moment(
 
 
 
+
+# ==================================================
+# Top-K Moment Prediction
+# ==================================================
+
+def _temporal_iou(a, b):
+    """
+    a, b: (start, end)
+    """
+
+    inter_start = max(a[0], b[0])
+    inter_end = min(a[1], b[1])
+
+    inter = max(
+        0.0,
+        inter_end - inter_start
+    )
+
+    union = (
+        (a[1] - a[0])
+        + (b[1] - b[0])
+        - inter
+    )
+
+    if union <= 0:
+        return 0.0
+
+    return inter / union
+
+
+def _temporal_nms(
+    predictions,
+    top_k=5,
+    iou_threshold=0.5,
+    min_start_gap=8.0
+):
+    """
+    Top-K temporal 후보 중복 제거.
+
+    1. IoU가 큰 후보 제거
+    2. 시작 시점이 너무 가까운 후보 제거
+
+    서비스에서는 start_time이 핵심이므로
+    동일 장면 주변의 중복 결과를 줄인다.
+    """
+
+    selected = []
+
+    for pred in predictions:
+
+        duplicated = False
+
+        for kept in selected:
+
+            iou = _temporal_iou(
+                (
+                    pred["start_time"],
+                    pred["end_time"]
+                ),
+                (
+                    kept["start_time"],
+                    kept["end_time"]
+                )
+            )
+
+            start_gap = abs(
+                pred["start_time"]
+                - kept["start_time"]
+            )
+
+            if (
+                iou >= iou_threshold
+                or start_gap < min_start_gap
+            ):
+                duplicated = True
+                break
+
+        if not duplicated:
+            selected.append(pred)
+
+        if len(selected) >= top_k:
+            break
+
+    return selected
+
+
+def predict_moments(
+    video_id,
+    video_feature_path,
+    query,
+    video_duration=None,
+    top_k=5,
+    iou_threshold=0.5
+):
+    """
+    Moment-DETR의 서로 다른 구간 Top-K 반환.
+    """
+
+    # ----------------------------------------------
+    # Video feature
+    # ----------------------------------------------
+
+    video_feats = torch.load(
+        video_feature_path,
+        map_location=DEVICE
+    ).float()
+
+    video_feats = F.normalize(
+        video_feats,
+        dim=-1,
+        eps=1e-5
+    )
+
+    n_frames = len(video_feats)
+
+    tef_st = (
+        torch.arange(
+            n_frames,
+            dtype=torch.float32,
+            device=DEVICE
+        )
+        / n_frames
+    )
+
+    tef_ed = tef_st + (
+        1.0 / n_frames
+    )
+
+    tef = torch.stack(
+        [tef_st, tef_ed],
+        dim=1
+    )
+
+    video_feats = torch.cat(
+        [
+            video_feats.to(DEVICE),
+            tef
+        ],
+        dim=1
+    ).unsqueeze(0)
+
+    video_mask = torch.ones(
+        1,
+        n_frames,
+        device=DEVICE
+    )
+
+    # ----------------------------------------------
+    # Query feature
+    # ----------------------------------------------
+
+    feature_extractor = (
+        get_feature_extractor()
+    )
+
+    query_feats = (
+        feature_extractor.encode_text(
+            [query]
+        )
+    )
+
+    query_feats, query_mask = (
+        pad_sequences_1d(
+            query_feats,
+            dtype=torch.float32,
+            device=DEVICE,
+            fixed_length=None
+        )
+    )
+
+    query_feats = F.normalize(
+        query_feats,
+        dim=-1,
+        eps=1e-5
+    )
+
+    # ----------------------------------------------
+    # Model inference
+    # ----------------------------------------------
+
+    model = get_model()
+
+    with torch.no_grad():
+
+        outputs = model(
+            src_vid=video_feats,
+            src_vid_mask=video_mask,
+            src_txt=query_feats,
+            src_txt_mask=query_mask
+        )
+
+    prob = F.softmax(
+        outputs["pred_logits"],
+        dim=-1
+    )
+
+    scores = prob[..., 0]
+
+    if video_duration is None:
+        video_duration = (
+            n_frames * CLIP_LEN
+        )
+
+    video_duration = float(
+        video_duration
+    )
+
+    spans = span_cxw_to_xx(
+        outputs["pred_spans"][0].cpu()
+    )
+
+    spans = (
+        spans
+        * video_duration
+    )
+
+    predictions = []
+
+    for span, score in zip(
+        spans.tolist(),
+        scores[0].cpu().tolist()
+    ):
+
+        start_time, end_time = span
+
+        start_time = max(
+            0.0,
+            min(
+                start_time,
+                video_duration
+            )
+        )
+
+        end_time = max(
+            start_time,
+            min(
+                end_time,
+                video_duration
+            )
+        )
+
+        predictions.append({
+            "video_id": video_id,
+            "query": query,
+            "start_time": round(
+                start_time,
+                4
+            ),
+            "end_time": round(
+                end_time,
+                4
+            ),
+            "score": round(
+                float(score),
+                4
+            )
+        })
+
+    predictions.sort(
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    return _temporal_nms(
+        predictions,
+        top_k=top_k,
+        iou_threshold=iou_threshold
+    )
+
+
+
 # ==================================================
 # Hybrid start-time refinement
 # ==================================================
@@ -790,6 +1061,333 @@ def predict_moment_hybrid(
             "score"
         ]
     }
+
+
+
+
+# ==================================================
+# Hybrid Top-K Moment Prediction
+# ==================================================
+
+def _search_subtitle_start_in_window(
+    query,
+    subtitle_json_path,
+    window_start,
+    window_end
+):
+    """
+    전체 자막을 기준으로 TF-IDF similarity를 계산한 뒤,
+    현재 Moment-DETR 후보와 겹치는 자막 중 최고점을 선택한다.
+
+    Top-1 hybrid와 동일한 score scale을 유지하기 위한 방식.
+    """
+
+    subtitle_json_path = Path(
+        subtitle_json_path
+    )
+
+    if not subtitle_json_path.exists():
+        return None
+
+    with open(
+        subtitle_json_path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+        subtitles = json.load(f)
+
+    if not subtitles:
+        return None
+
+    windows = []
+
+    # 전체 영상 자막에서 1~3줄 sliding window 생성
+    for window_size in (1, 2, 3):
+
+        for i in range(
+            len(subtitles) - window_size + 1
+        ):
+
+            group = subtitles[
+                i:i + window_size
+            ]
+
+            windows.append({
+                "start": float(
+                    group[0]["start_time"]
+                ),
+                "end": float(
+                    group[-1]["end_time"]
+                ),
+                "text": " ".join(
+                    x["text"].strip()
+                    for x in group
+                )
+            })
+
+    if not windows:
+        return None
+
+    corpus = [
+        x["text"]
+        for x in windows
+    ]
+
+    # 전체 자막 corpus 기준 TF-IDF
+    vectorizer = TfidfVectorizer(
+        lowercase=True,
+        analyzer="char_wb",
+        ngram_range=(3, 5),
+        min_df=1
+    )
+
+    subtitle_matrix = (
+        vectorizer.fit_transform(
+            corpus
+        )
+    )
+
+    query_vector = (
+        vectorizer.transform(
+            [query]
+        )
+    )
+
+    scores = cosine_similarity(
+        query_vector,
+        subtitle_matrix
+    )[0]
+
+    # 현재 Moment-DETR 후보와 겹치는 자막만 허용
+    valid_indices = []
+
+    for i, w in enumerate(windows):
+
+        if (
+            w["end"] < window_start
+            or w["start"] > window_end
+        ):
+            continue
+
+        valid_indices.append(i)
+
+    if not valid_indices:
+        return None
+
+    best_idx = max(
+        valid_indices,
+        key=lambda i: scores[i]
+    )
+
+    best = windows[best_idx]
+
+    return {
+        "score": float(
+            scores[best_idx]
+        ),
+        "start": best["start"],
+        "end": best["end"],
+        "text": best["text"]
+    }
+
+
+def _dedup_hybrid_starts(
+    results,
+    top_k=5,
+    min_start_gap=8.0
+):
+    """
+    Hybrid 보정 후 start_time이 너무 가까운
+    결과들을 다시 제거한다.
+    """
+
+    selected = []
+
+    for result in results:
+
+        duplicated = False
+
+        for kept in selected:
+
+            gap = abs(
+                result["start_time"]
+                - kept["start_time"]
+            )
+
+            if gap < min_start_gap:
+                duplicated = True
+                break
+
+        if not duplicated:
+            selected.append(
+                result
+            )
+
+        if len(selected) >= top_k:
+            break
+
+    return selected
+
+
+def predict_moments_hybrid(
+    video_id,
+    video_feature_path,
+    query,
+    subtitle_json_path=None,
+    video_duration=None,
+    top_k=5,
+    iou_threshold=0.5,
+    min_start_gap=8.0
+):
+    """
+    서비스용 Top-K Hybrid inference.
+
+    1. Moment-DETR에서 여러 후보 구간 생성
+    2. Temporal NMS로 중복 후보 제거
+    3. 각 후보 구간 내부에서 subtitle 검색
+    4. subtitle confidence가 충분하면
+       subtitle start 사용
+    5. 부족하면 visual CLIP refinement
+    6. 최종 start_time 기준 중복 제거
+    """
+
+    # 후보를 조금 넉넉하게 받아온 뒤
+    # 최종 hybrid 보정 후 top_k 선택
+    candidate_k = max(
+        top_k * 3,
+        top_k
+    )
+
+    visual_candidates = predict_moments(
+        video_id=video_id,
+        video_feature_path=video_feature_path,
+        query=query,
+        video_duration=video_duration,
+        top_k=candidate_k,
+        iou_threshold=iou_threshold
+    )
+
+    hybrid_results = []
+
+    for candidate in visual_candidates:
+
+        visual_start = float(
+            candidate["start_time"]
+        )
+
+        visual_end = float(
+            candidate["end_time"]
+        )
+
+        subtitle_result = None
+
+        if subtitle_json_path is not None:
+
+            subtitle_result = (
+                _search_subtitle_start_in_window(
+                    query=query,
+                    subtitle_json_path=(
+                        subtitle_json_path
+                    ),
+                    window_start=visual_start,
+                    window_end=visual_end
+                )
+            )
+
+        # ------------------------------------------
+        # Subtitle 사용
+        # ------------------------------------------
+
+        if (
+            subtitle_result is not None
+            and subtitle_result["score"]
+            >= SUBTITLE_THRESHOLD
+        ):
+
+            final_start = max(
+                0.0,
+                subtitle_result["start"]
+                - START_OFFSET
+            )
+
+            source = "subtitle"
+
+            subtitle_score = (
+                subtitle_result["score"]
+            )
+
+        # ------------------------------------------
+        # Visual fallback
+        # ------------------------------------------
+
+        else:
+
+            final_start = (
+                _refine_visual_start(
+                    query=query,
+                    video_feature_path=(
+                        video_feature_path
+                    ),
+                    span_start=visual_start,
+                    span_end=visual_end
+                )
+            )
+
+            source = "visual"
+
+            subtitle_score = (
+                None
+                if subtitle_result is None
+                else subtitle_result["score"]
+            )
+
+        if video_duration is not None:
+
+            final_start = min(
+                final_start,
+                float(video_duration)
+            )
+
+        hybrid_results.append({
+            "video_id": video_id,
+            "query": query,
+            "start_time": round(
+                float(final_start),
+                4
+            ),
+            "end_time": candidate[
+                "end_time"
+            ],
+            "score": candidate[
+                "score"
+            ],
+            "source": source,
+            "subtitle_score": (
+                None
+                if subtitle_score is None
+                else round(
+                    float(subtitle_score),
+                    4
+                )
+            )
+        })
+
+    # Moment-DETR score 높은 순서 유지
+    hybrid_results.sort(
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    # Hybrid 보정 후 같은 시작점 주변 중복 제거
+    hybrid_results = (
+        _dedup_hybrid_starts(
+            hybrid_results,
+            top_k=top_k,
+            min_start_gap=min_start_gap
+        )
+    )
+
+    return hybrid_results
 
 
 
