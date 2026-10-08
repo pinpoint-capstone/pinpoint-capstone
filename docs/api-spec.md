@@ -92,6 +92,7 @@
 |---|---|---|
 | 400 | INVALID_YOUTUBE_ID | 영상 ID 형식 오류 |
 | 400 | EMPTY_QUERY | 검색어가 비어 있음 |
+| 404 | VIDEO_NOT_FOUND | 유튜브에 없는 영상이거나 등록되지 않은 영상
 | 422 | VIDEO_TOO_LONG | 길이 제한 초과 (제한 값 합의 필요) |
 | 502 | DOWNLOAD_FAILED | 영상 다운로드 실패 |
 | 503 | YOUTUBE_QUOTA | 유튜브 API 일일 한도 초과 |
