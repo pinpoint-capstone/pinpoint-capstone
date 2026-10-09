@@ -212,3 +212,15 @@ def create_search_router(get_current_user) -> APIRouter:
         return {"query": query, "videos": videos, "pending": pending}
 
     return router
+
+def warmup_ai() -> None:
+    """서버 시작 직후 모델을 미리 올려 첫 검색 지연을 없앱니다."""
+    if not indexer.USE_REAL_AI:
+        return
+    try:
+        rows = indexer.list_indexed(limit=1)
+        if rows:
+            feature = indexer.resolve_path(rows[0]["feature_path"])
+            predict_moments(rows[0]["youtube_video_id"], str(feature), "warm up", 1)
+    except Exception:
+        pass

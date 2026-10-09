@@ -4,6 +4,7 @@ from supabase import create_client
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+import threading
 import uuid
 
 from pathlib import Path
@@ -173,9 +174,18 @@ def get_favorites(user_id: str = Depends(get_current_user)):
     )
     return {"favorites": response.data}
 
+
+# ===================== 검색 (유튜브 / 분석 / 장면 검색) =====================
+
 try:
-    from .services.search_api import create_search_router
+    from .services.search_api import create_search_router, warmup_ai
 except ImportError:
-    from services.search_api import create_search_router
+    from services.search_api import create_search_router, warmup_ai
 
 app.include_router(create_search_router(get_current_user))
+
+
+@app.on_event("startup")
+def _warmup_on_startup():
+    # 서버가 켜질 때 AI 모델을 미리 올려 첫 검색이 느려지지 않게 함
+    threading.Thread(target=warmup_ai, daemon=True).start()
