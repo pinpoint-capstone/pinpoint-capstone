@@ -83,7 +83,50 @@
 ```
 `status`는 `PENDING` / `PROCESSING` / `INDEXED` / `FAILED` 중 하나예요. `FAILED`면 `error_message`에 사유가 들어가요.
 
-## 4. 에러 응답 (공통)
+## 4. 다중 장면 검색 (분석 완료된 영상만)
+`POST /api/search/multi`
+
+요청
+```json
+{
+  "query": "골 세리머니",
+  "youtube_video_ids": ["Ps8FeqKyFoM", "a6Nw3y07Zs8"],
+  "top_k_per_video": 3,
+  "max_videos": 10
+}
+```
+- `youtube_video_ids`는 선택이에요. 생략하면 분석 완료된 영상 전체가 대상이에요. (최대 20개)
+- `top_k_per_video`는 1~5(기본 3), `max_videos`는 1~10(기본 10)이에요.
+
+응답 200
+```json
+{
+  "query": "골 세리머니",
+  "videos": [
+    {
+      "video": {
+        "video_id": "내부 uuid",
+        "youtube_video_id": "Ps8FeqKyFoM",
+        "title": "영상 제목",
+        "channel_name": "채널명",
+        "thumbnail_url": "https://..."
+      },
+      "best_score": 0.9,
+      "moments": [
+        { "segment_id": "Ps8FeqKyFoM-1", "start_time": 132.4, "end_time": 145.0, "score": 0.9 }
+      ]
+    }
+  ],
+  "pending": [
+    { "youtube_video_id": "a6Nw3y07Zs8", "status": "NOT_ANALYZED" }
+  ]
+}
+```
+- `videos`는 `best_score` 높은 순이고, 분석이 끝난(`INDEXED`) 영상만 들어가요.
+- `pending`은 아직 분석 안 된 영상이에요. `status`는 `NOT_ANALYZED` / `PENDING` / `PROCESSING` / `FAILED` 중 하나예요.
+- 이 API는 분석을 시작하지 않아요. `pending` 영상은 사용자가 클릭할 때 `POST /api/search`로 분석을 시작해요.
+
+## 5. 에러 응답 (공통)
 ```json
 { "error": { "code": "INVALID_YOUTUBE_ID", "message": "올바르지 않은 영상 ID입니다." } }
 ```
