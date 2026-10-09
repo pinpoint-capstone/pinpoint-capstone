@@ -26,6 +26,8 @@ class MultiSearchRequest(BaseModel):
     youtube_video_ids: list[str] | None = None
     top_k_per_video: int = 3
     max_videos: int = 10
+    auto_analyze: bool = False      # true면 미분석 영상의 분석을 백그라운드로 시작
+    max_new_analyses: int = 3       # 한 번의 요청으로 새로 시작할 최대 영상 수 (최대 5)
 
 def _err(status: int, code: str, message: str) -> JSONResponse:
     return JSONResponse(status_code=status,
@@ -52,6 +54,36 @@ def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5
          "score": round(0.9 - 0.1 * i, 2)}
         for i in range(top_k)
     ]
+
+
+def _try_start_analysis(yid: str, row: dict | None, background_tasks: BackgroundTasks):
+    """미분석 영상의 분석을 시작합니다.
+    반환: (새 상태 or None, 이번에 새로 시작했는지)
+    None이면 상태를 바꾸지 않고 그대로 둡니다."""
+    meta = {}
+    if row is None:
+        try:
+            info = fetch_video_meta(yid)
+        except requests.RequestException:
+            return None, False
+        if not info:
+            return "NOT_FOUND", False
+        if info["duration"] and info["duration"] > MAX_DURATION_SEC:
+            return "TOO_LONG", False
+        title = info["title"]
+        meta = {"channel_name": info["channel_name"],
+                "published_at": info["published_at"],
+                "thumbnail_url": info["thumbnail_url"]}
+    else:
+        title = row["title"]
+
+    r = indexer.prepare(yid, title, **meta)
+    if r["state"] == "STARTED":
+        background_tasks.add_task(indexer.run_indexing, r["video_id"], yid)
+        return "PROCESSING", True
+    if r["state"] == "PROCESSING":
+        return "PROCESSING", False  # 이미 다른 요청이 분석 중
+    return None, False  # READY: 방금 분석이 끝남. 다음 검색부터 결과에 나옴
 
 
 def create_search_router(get_current_user) -> APIRouter:
@@ -153,7 +185,8 @@ def create_search_router(get_current_user) -> APIRouter:
         }
 
     @router.post("/api/search/multi")
-    def search_multi(body: MultiSearchRequest, user_id=Depends(optional_user)):
+    def search_multi(body: MultiSearchRequest, background_tasks: BackgroundTasks,
+                     user_id=Depends(optional_user)):
         query = body.query.strip()
         if not query:
             return _err(400, "EMPTY_QUERY", "검색어가 비어 있습니다.")
@@ -195,12 +228,20 @@ def create_search_router(get_current_user) -> APIRouter:
         pending = []
         if ids:
             done = {v["video"]["youtube_video_id"] for v in videos}
+            budget = min(max(body.max_new_analyses, 0), 5) if body.auto_analyze else 0
             for yid in ids:
                 if yid in done:
                     continue
                 row = indexer.get_video(yid)
-                pending.append({"youtube_video_id": yid,
-                                "status": row["status"] if row else "NOT_ANALYZED"})
+                status = row["status"] if row else "NOT_ANALYZED"
+                # FAILED는 자동 재시도하지 않음 (사용자가 클릭하면 POST /api/search로 재시도)
+                if budget > 0 and status in ("NOT_ANALYZED", "PENDING"):
+                    new_status, started = _try_start_analysis(yid, row, background_tasks)
+                    if new_status:
+                        status = new_status
+                    if started:
+                        budget -= 1
+                pending.append({"youtube_video_id": yid, "status": status})
 
         if user_id:
             try:
