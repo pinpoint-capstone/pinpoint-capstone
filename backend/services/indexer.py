@@ -1,4 +1,5 @@
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,14 +14,19 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
 FEATURE_DIR = ROOT / "data" / "features"
-MODEL_VERSION = "stub"
 
 load_dotenv(ROOT / "backend" / ".env")
+USE_REAL_AI = os.getenv("USE_REAL_AI", "0") == "1"
+MODEL_VERSION = "moment-detr-clip" if USE_REAL_AI else "stub"
+_AI_LOCK = threading.Lock()  # GPU를 한 번에 하나만 쓰게 함
 supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
 
 
 def build_feature(video_path: str, video_id: str) -> str:
-    """임시 가짜 함수. AI 팀원의 build_feature를 받으면 이 함수를 교체합니다."""
+    if USE_REAL_AI:
+        from ai.features.moment_detr_features import build_feature as real_build_feature
+        with _AI_LOCK:
+            return str(real_build_feature(video_path=video_path, video_id=video_id))
     FEATURE_DIR.mkdir(parents=True, exist_ok=True)
     out = FEATURE_DIR / f"{video_id}.stub"
     out.write_text(f"stub feature for {video_path}")
@@ -122,13 +128,13 @@ def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[
         return []
     feats = (
         supabase.table("video_features")
-        .select("video_id, feature_path, id")
+        .select("video_id, feature_path, model_version, id")
         .in_("video_id", [r["video_id"] for r in rows])
         .order("id")
         .execute()
         .data
     )
-    fmap = {f["video_id"]: f["feature_path"] for f in feats}  # 같은 영상이면 최신 id가 남음
+    fmap = {f["video_id"]: f["feature_path"] for f in feats if f.get("model_version") == MODEL_VERSION}
     return [{**r, "feature_path": fmap[r["video_id"]]} for r in rows if r["video_id"] in fmap]
 
 def check_status(youtube_video_id: str) -> dict | None:
@@ -151,7 +157,7 @@ def prepare(youtube_video_id: str, title: str, **meta) -> dict:
     vid = row["video_id"]
     feat = get_feature(vid)
 
-    if row["status"] == "INDEXED" and feat:
+    if row["status"] == "INDEXED" and feat and feat.get("model_version") == MODEL_VERSION:
         supabase.table("videos").update({"last_used_at": _now()}).eq("video_id", vid).execute()
         return {"state": "READY", "video_id": vid, "feature_path": feat["feature_path"]}
 

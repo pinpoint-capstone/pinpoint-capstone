@@ -40,8 +40,13 @@ def _youtube_error(e: requests.HTTPError) -> JSONResponse:
 
 
 def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5):
-    """임시 가짜 함수. AI의 predict_moments_hybrid로 교체합니다.
-    진짜 함수는 [{start_time, end_time, score, ...}, ...]를 돌려줍니다."""
+    if indexer.USE_REAL_AI:
+        from ai.features.run_moment_detr_inference import predict_moments_hybrid
+        with indexer._AI_LOCK:
+            return predict_moments_hybrid(
+                video_id=video_id, video_feature_path=feature_path,
+                query=query, top_k=top_k,
+            )
     return [
         {"start_time": 10.0 + 15 * i, "end_time": 20.0 + 15 * i,
          "score": round(0.9 - 0.1 * i, 2)}
