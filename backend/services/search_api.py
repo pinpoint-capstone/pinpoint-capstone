@@ -21,6 +21,11 @@ class SearchRequest(BaseModel):
     query: str
     top_k: int = 5
 
+class MultiSearchRequest(BaseModel):
+    query: str
+    youtube_video_ids: list[str] | None = None
+    top_k_per_video: int = 3
+    max_videos: int = 10
 
 def _err(status: int, code: str, message: str) -> JSONResponse:
     return JSONResponse(status_code=status,
@@ -141,5 +146,64 @@ def create_search_router(get_current_user) -> APIRouter:
             "query": query,
             "results": results,
         }
+
+    @router.post("/api/search/multi")
+    def search_multi(body: MultiSearchRequest, user_id=Depends(optional_user)):
+        query = body.query.strip()
+        if not query:
+            return _err(400, "EMPTY_QUERY", "검색어가 비어 있습니다.")
+
+        ids = None
+        if body.youtube_video_ids:
+            ids = [i.strip() for i in body.youtube_video_ids][:20]
+            if not all(YOUTUBE_ID_RE.match(i) for i in ids):
+                return _err(400, "INVALID_YOUTUBE_ID", "올바르지 않은 영상 ID가 있습니다.")
+
+        top_k = min(max(body.top_k_per_video, 1), 5)
+        limit = min(max(body.max_videos, 1), 10)
+        rows = indexer.list_indexed(ids, limit)
+
+        videos = []
+        for v in rows:
+            yid = v["youtube_video_id"]
+            try:
+                feature = indexer.resolve_path(v["feature_path"])
+                raw = predict_moments(yid, str(feature), query, top_k)
+            except Exception:
+                continue  # 한 영상이 실패해도 나머지는 계속
+            moments = [
+                {"segment_id": f"{yid}-{i}", "start_time": m["start_time"],
+                 "end_time": m["end_time"], "score": m["score"]}
+                for i, m in enumerate(raw, start=1)
+            ]
+            if not moments:
+                continue
+            videos.append({
+                "video": {"video_id": v["video_id"], "youtube_video_id": yid,
+                          "title": v["title"], "channel_name": v.get("channel_name"),
+                          "thumbnail_url": v.get("thumbnail_url")},
+                "best_score": max(m["score"] for m in moments),
+                "moments": moments,
+            })
+        videos.sort(key=lambda x: x["best_score"], reverse=True)
+
+        pending = []
+        if ids:
+            done = {v["video"]["youtube_video_id"] for v in videos}
+            for yid in ids:
+                if yid in done:
+                    continue
+                row = indexer.get_video(yid)
+                pending.append({"youtube_video_id": yid,
+                                "status": row["status"] if row else "NOT_ANALYZED"})
+
+        if user_id:
+            try:
+                indexer.supabase.table("search_history").insert(
+                    {"user_id": user_id, "query": query}).execute()
+            except Exception:
+                pass
+
+        return {"query": query, "videos": videos, "pending": pending}
 
     return router

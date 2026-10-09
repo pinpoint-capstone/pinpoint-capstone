@@ -107,6 +107,29 @@ def claim(video_id: str) -> bool:
     )
     return bool(res.data)
 
+def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[dict]:
+    """분석 완료된 유튜브 영상 목록 (feature 경로 포함)."""
+    q = (
+        supabase.table("videos")
+        .select("*")
+        .eq("status", "INDEXED")
+        .eq("source_type", "youtube")
+    )
+    if youtube_ids:
+        q = q.in_("youtube_video_id", youtube_ids)
+    rows = q.order("last_used_at", desc=True).limit(limit).execute().data
+    if not rows:
+        return []
+    feats = (
+        supabase.table("video_features")
+        .select("video_id, feature_path, id")
+        .in_("video_id", [r["video_id"] for r in rows])
+        .order("id")
+        .execute()
+        .data
+    )
+    fmap = {f["video_id"]: f["feature_path"] for f in feats}  # 같은 영상이면 최신 id가 남음
+    return [{**r, "feature_path": fmap[r["video_id"]]} for r in rows if r["video_id"] in fmap]
 
 def check_status(youtube_video_id: str) -> dict | None:
     row = get_video(youtube_video_id)
