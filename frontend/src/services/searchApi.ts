@@ -1,112 +1,385 @@
+
 import { SearchResponse, SearchResultItem } from '../types';
-import { DEFAULT_SEARCH_RESPONSES, MOCK_VIDEOS } from '../data/mockData';
+import { DEFAULT_SEARCH_RESPONSES } from '../data/mockData';
 
 /**
- * Search API service.
- * Structured to be easily swapped with a real Backend endpoint:
- * e.g., const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+ * 기존 Mock 검색 함수
+ * 기존 화면과의 호환성을 위해 유지합니다.
  */
-export async function searchVideoSegments(query: string): Promise<SearchResponse> {
+export async function searchVideoSegments(
+  query: string
+): Promise<SearchResponse> {
   const trimmed = query.trim();
 
-  // Artificial brief network latency (300ms) for realistic UX and loading states
   await new Promise((resolve) => setTimeout(resolve, 350));
 
   if (!trimmed) {
     return {
       query: '',
-      results: []
+      results: [],
     };
   }
 
-  // 1. Check exact or partial match in pre-defined responses
   if (DEFAULT_SEARCH_RESPONSES[trimmed]) {
     const resp = DEFAULT_SEARCH_RESPONSES[trimmed];
+
     return {
       query: trimmed,
-      // Always sort by score descending as requested
-      results: [...resp.results].sort((a, b) => b.score - a.score)
+      results: [...resp.results].sort((a, b) => b.score - a.score),
     };
   }
 
-  // Check loose keyword match
   for (const [knownQuery, resp] of Object.entries(DEFAULT_SEARCH_RESPONSES)) {
-    if (trimmed.includes('배터리') || trimmed.includes('에어팟') || trimmed.includes('이어폰')) {
+    if (
+      trimmed.includes('배터리') ||
+      trimmed.includes('에어팟') ||
+      trimmed.includes('이어폰')
+    ) {
       if (knownQuery.includes('배터리')) {
         return {
           query: trimmed,
-          results: [...resp.results].sort((a, b) => b.score - a.score)
+          results: [...resp.results].sort((a, b) => b.score - a.score),
         };
       }
     }
-    if (trimmed.includes('실험') || trimmed.includes('피펫') || trimmed.includes('용액')) {
+
+    if (
+      trimmed.includes('실험') ||
+      trimmed.includes('피펫') ||
+      trimmed.includes('용액')
+    ) {
       if (knownQuery.includes('용액')) {
         return {
           query: trimmed,
-          results: [...resp.results].sort((a, b) => b.score - a.score)
+          results: [...resp.results].sort((a, b) => b.score - a.score),
         };
       }
     }
-    if (trimmed.includes('골') || trimmed.includes('축구') || trimmed.includes('경기') || trimmed.includes('세레머니')) {
+
+    if (
+      trimmed.includes('골') ||
+      trimmed.includes('축구') ||
+      trimmed.includes('경기') ||
+      trimmed.includes('세레머니')
+    ) {
       if (knownQuery.includes('골')) {
         return {
           query: trimmed,
-          results: [...resp.results].sort((a, b) => b.score - a.score)
+          results: [...resp.results].sort((a, b) => b.score - a.score),
         };
       }
     }
-    if (trimmed.includes('문') || trimmed.includes('인테리어') || trimmed.includes('투어') || trimmed.includes('방')) {
+
+    if (
+      trimmed.includes('문') ||
+      trimmed.includes('인테리어') ||
+      trimmed.includes('투어') ||
+      trimmed.includes('방')
+    ) {
       if (knownQuery.includes('문')) {
         return {
           query: trimmed,
-          results: [...resp.results].sort((a, b) => b.score - a.score)
+          results: [...resp.results].sort((a, b) => b.score - a.score),
         };
       }
     }
   }
 
-  // If query is something completely unrelated, e.g. "없는 검색어 예시"
-  if (trimmed.includes('없는') || trimmed.includes('null') || trimmed.includes('empty')) {
+  if (
+    trimmed.includes('없는') ||
+    trimmed.includes('null') ||
+    trimmed.includes('empty')
+  ) {
     return {
       query: trimmed,
-      results: []
+      results: [],
     };
   }
 
-  // General fallback: generate dynamic relevant results from available videos
   const dynamicResults: SearchResultItem[] = [
     {
       video_id: 'abc123',
       segment_id: 'abc123_seg_021',
       start_time: 203.4,
       end_time: 241.7,
-      score: 0.93
+      score: 0.93,
     },
     {
       video_id: 'xyz789',
       segment_id: 'xyz789_seg_008',
       start_time: 78.2,
       end_time: 109.4,
-      score: 0.88
+      score: 0.88,
     },
     {
       video_id: 'vlog456',
       segment_id: 'vlog456_seg_014',
       start_time: 132.0,
       end_time: 170.0,
-      score: 0.84
+      score: 0.84,
     },
     {
       video_id: 'sport101',
       segment_id: 'sport101_seg_033',
       start_time: 165.0,
       end_time: 210.0,
-      score: 0.79
-    }
+      score: 0.79,
+    },
   ];
 
   return {
     query: trimmed,
-    results: dynamicResults.sort((a, b) => b.score - a.score)
+    results: dynamicResults.sort((a, b) => b.score - a.score),
   };
+}
+
+// ===================== 공통 API 설정 =====================
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem('pinpoint-access-token');
+
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+// ===================== YouTube 영상 검색 =====================
+
+export interface YouTubeVideoItem {
+  youtube_video_id: string;
+  title: string;
+  channel_name: string;
+  thumbnail_url: string;
+  published_at: string;
+}
+
+export interface YouTubeSearchResponse {
+  items: YouTubeVideoItem[];
+}
+
+export async function searchYouTubeVideos(
+  query: string,
+  maxResults = 5
+): Promise<YouTubeSearchResponse> {
+  const params = new URLSearchParams({
+    q: query.trim(),
+    max_results: String(maxResults),
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/youtube/search?${params.toString()}`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `YouTube 영상 검색 실패 (HTTP ${response.status})`
+    );
+  }
+
+  return (await response.json()) as YouTubeSearchResponse;
+}
+
+// ===================== 다중 영상 AI 검색 =====================
+
+export interface MomentResult {
+  segment_id: string;
+  start_time: number;
+  end_time: number;
+  score: number;
+}
+
+export interface MultiSearchVideo {
+  video: {
+    video_id: string;
+    youtube_video_id: string;
+    title: string;
+    channel_name: string;
+    thumbnail_url: string;
+  };
+  best_score: number;
+  moments: MomentResult[];
+}
+
+export interface PendingVideo {
+  youtube_video_id: string;
+  status: 'NOT_ANALYZED' | 'PENDING' | 'PROCESSING' | 'FAILED';
+}
+
+export interface MultiSearchResponse {
+  query: string;
+  videos: MultiSearchVideo[];
+  pending: PendingVideo[];
+}
+
+/**
+ * 여러 영상의 AI 검색 결과를 가져옵니다.
+ *
+ * autoAnalyze=true:
+ * 미분석 영상의 분석을 백그라운드에서 자동 시작합니다.
+ *
+ * 주의:
+ * 분석을 시작했다고 즉시 결과가 반환되는 것은 아닙니다.
+ */
+export async function searchMultipleVideos(
+  query: string,
+  youtubeVideoIds: string[],
+  topKPerVideo = 3,
+  autoAnalyze = true
+): Promise<MultiSearchResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/search/multi`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      query: query.trim(),
+      youtube_video_ids: youtubeVideoIds,
+      top_k_per_video: topKPerVideo,
+      max_videos: 10,
+      auto_analyze: autoAnalyze,
+      max_new_analyses: 3,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `다중 영상 검색 실패 (HTTP ${response.status})`
+    );
+  }
+
+  return (await response.json()) as MultiSearchResponse;
+}
+
+// ===================== 영상 분석 상태 확인 =====================
+
+export type VideoAnalysisStatus =
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'INDEXED'
+  | 'FAILED';
+
+export interface VideoStatusResponse {
+  youtube_video_id: string;
+  status: VideoAnalysisStatus;
+  error_message: string | null;
+}
+
+/**
+ * 영상 분석 진행 상태를 확인합니다.
+ *
+ * INDEXED: 분석 완료
+ * PROCESSING: 분석 중
+ * FAILED: 분석 실패
+ */
+export async function getYouTubeVideoStatus(
+  youtubeVideoId: string
+): Promise<VideoStatusResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/videos/youtube/${encodeURIComponent(
+      youtubeVideoId
+    )}/status`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `영상 분석 상태 확인 실패 (HTTP ${response.status})`
+    );
+  }
+
+  return (await response.json()) as VideoStatusResponse;
+}
+
+// ===================== 개별 영상 분석 / 검색 =====================
+
+export interface SingleSearchResponse {
+  status?: 'INDEXED' | 'PROCESSING';
+  youtube_video_id?: string;
+  message?: string;
+  query?: string;
+  video?: {
+    video_id: string;
+    youtube_video_id: string;
+    title: string;
+    thumbnail_url: string;
+  };
+  results?: MomentResult[];
+}
+
+/**
+ * 개별 영상 검색 및 분석 시작.
+ *
+ * 미분석 영상은 202 PROCESSING을 반환할 수 있습니다.
+ * 분석이 끝난 영상은 검색 결과를 반환합니다.
+ *
+ * 자동 분석에 실패한 영상을 사용자가 재시도할 때도 사용합니다.
+ */
+export async function searchSingleVideo(
+  youtubeVideoId: string,
+  query: string,
+  topK = 5
+): Promise<SingleSearchResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/search`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      youtube_video_id: youtubeVideoId,
+      query: query.trim(),
+      top_k: topK,
+    }),
+  });
+
+  if (!response.ok && response.status !== 202) {
+    throw new Error(
+      `개별 영상 검색 실패 (HTTP ${response.status})`
+    );
+  }
+
+  return (await response.json()) as SingleSearchResponse;
+}
+
+// ===================== 백엔드 결과 → 프론트 데이터 =====================
+
+export function convertMultiSearchResults(
+  response: MultiSearchResponse
+): {
+  results: SearchResultItem[];
+  videos: Record<string, import('../types').VideoMetadata>;
+} {
+  const results: SearchResultItem[] = [];
+  const videos: Record<string, import('../types').VideoMetadata> = {};
+
+  for (const entry of response.videos) {
+    const video = entry.video;
+
+    videos[video.video_id] = {
+      video_id: video.video_id,
+      youtube_video_id: video.youtube_video_id,
+      title: video.title,
+      category: 'youtube',
+      categoryLabel: 'YouTube',
+      channelName: video.channel_name,
+      publishDate: '',
+      views: '',
+      thumbnailUrl: video.thumbnail_url,
+      videoUrl: `https://www.youtube.com/watch?v=${video.youtube_video_id}`,
+      totalDuration: 0,
+      chapters: [],
+    };
+
+    for (const moment of entry.moments) {
+      results.push({
+        video_id: video.video_id,
+        segment_id: moment.segment_id,
+        start_time: moment.start_time,
+        end_time: moment.end_time,
+        score: moment.score,
+      });
+    }
+  }
+
+  results.sort((a, b) => b.score - a.score);
+
+  return { results, videos };
 }

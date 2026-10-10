@@ -1,3 +1,4 @@
+
 export interface SearchResultItem {
   video_id: string;
   segment_id: string;
@@ -19,6 +20,8 @@ export interface Chapter {
 
 export interface VideoMetadata {
   video_id: string;
+  youtube_video_id?: string; // YouTube 영상 ID (11자리)
+
   title: string;
   category: string;
   categoryLabel: string;
