@@ -8,8 +8,10 @@ from supabase import create_client
 
 try:
     from .acquire import download_video
+    from .subtitles import transcribe_video
 except ImportError:
     from acquire import download_video
+    from subtitles import transcribe_video
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
@@ -200,11 +202,20 @@ def prepare(youtube_video_id: str, title: str, **meta) -> dict:
 
 
 def run_indexing(video_id: str, youtube_video_id: str) -> None:
-    """다운로드 → feature 생성 → 저장 → mp4 삭제. 오래 걸려서 백그라운드로 실행합니다."""
+    """다운로드 → feature 생성 → 자막 생성 → 저장 → mp4 삭제. 오래 걸려서 백그라운드로 실행합니다."""
     video_path = None
     try:
         video_path = download_video(youtube_video_id, out_dir=str(RAW_DIR))
         feature_path = _to_stored_path(build_feature(str(video_path), youtube_video_id))
+
+        if USE_REAL_AI:
+            # 자막 생성이 실패해도 영상(visual) 검색은 가능하므로 분석 전체를 실패로 두지 않습니다.
+            try:
+                with _AI_LOCK:
+                    transcribe_video(str(video_path), youtube_video_id)
+            except Exception as e:
+                print(f"[subtitles] 자막 생성 실패 ({youtube_video_id}): {e}")
+
         supabase.table("video_features").delete().eq("video_id", video_id).execute()
         supabase.table("video_features").insert({
             "video_id": video_id,
@@ -221,8 +232,24 @@ def run_indexing(video_id: str, youtube_video_id: str) -> None:
             Path(video_path).unlink()
 
 
+def backfill_subtitles(youtube_video_id: str) -> str:
+    """이미 분석된 영상의 자막만 새로 만듭니다. (feature는 건드리지 않음)"""
+    video_path = None
+    try:
+        video_path = download_video(youtube_video_id, out_dir=str(RAW_DIR))
+        with _AI_LOCK:
+            return transcribe_video(str(video_path), youtube_video_id)
+    finally:
+        if video_path and Path(video_path).exists():
+            Path(video_path).unlink()
+
+
 if __name__ == "__main__":
     import sys
+
+    if len(sys.argv) >= 3 and sys.argv[1] == "subs":
+        print("자막 저장:", backfill_subtitles(sys.argv[2]))
+        sys.exit(0)
 
     yid = sys.argv[1]
     title = sys.argv[2] if len(sys.argv) > 2 else yid

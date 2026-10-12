@@ -1,3 +1,4 @@
+import logging
 import re
 
 import requests
@@ -7,10 +8,16 @@ from pydantic import BaseModel
 
 try:
     from . import indexer
+    from .subtitles import load_subtitles
+    from .translate import to_english
     from .youtube_search import fetch_video_meta, search_youtube
 except ImportError:
     import indexer
+    from subtitles import load_subtitles
+    from translate import to_english
     from youtube_search import fetch_video_meta, search_youtube
+
+logger = logging.getLogger("uvicorn.error")
 
 YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
@@ -41,17 +48,52 @@ def _youtube_error(e: requests.HTTPError) -> JSONResponse:
                 "유튜브 API 호출에 실패했습니다.")
 
 
+def _score_of(r: dict) -> float:
+    """영상 결과는 score, 자막 결과는 subtitle_score에 점수가 들어 있습니다."""
+    s = r.get("score")
+    if s is None:
+        s = r.get("subtitle_score")
+    return float(s) if s is not None else 0.0
+
+
 def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5):
+    """구간 검색. 한국어 자막이 있으면 자막(MiniLM) 우선, 없으면 영상(Moment-DETR)으로 검색합니다."""
     if indexer.USE_REAL_AI:
-        from ai.features.run_moment_detr_inference import predict_moments_hybrid
+        from ai.features.fusion_search import predict_moments_fusion
+
+        subtitles, language = load_subtitles(video_id)
+        if language != "ko":
+            subtitles = []  # 한국어 자막이 아니면 영상 검색으로
+
         with indexer._AI_LOCK:
-            return predict_moments_hybrid(
-                video_id=video_id, video_feature_path=feature_path,
-                query=query, top_k=top_k,
-            )
+            english_query = to_english(query)
+            try:
+                raw = predict_moments_fusion(
+                    video_id=video_id,
+                    feature_path=feature_path,
+                    subtitles=subtitles,
+                    korean_query=query,
+                    english_query=english_query,
+                    video_duration=None,
+                    top_k=top_k,
+                )
+            except Exception as e:
+                # 모델 경로 설정 누락 등으로 자막 검색이 안 되면 영상 검색으로 대신합니다.
+                logger.warning("fusion 검색 실패, 영상 검색으로 대체합니다: %s", e)
+                from ai.features.run_moment_detr_inference import predict_moments_hybrid
+
+                raw = predict_moments_hybrid(
+                    video_id=video_id, video_feature_path=feature_path,
+                    query=english_query, top_k=top_k,
+                )
+        return [
+            {"start_time": r["start_time"], "end_time": r["end_time"],
+             "score": _score_of(r), "source": r.get("source")}
+            for r in raw
+        ]
     return [
         {"start_time": 10.0 + 15 * i, "end_time": 20.0 + 15 * i,
-         "score": round(0.9 - 0.1 * i, 2)}
+         "score": round(0.9 - 0.1 * i, 2), "source": "stub"}
         for i in range(top_k)
     ]
 
@@ -84,6 +126,12 @@ def _try_start_analysis(yid: str, row: dict | None, background_tasks: Background
     if r["state"] == "PROCESSING":
         return "PROCESSING", False  # 이미 다른 요청이 분석 중
     return None, False  # READY: 방금 분석이 끝남. 다음 검색부터 결과에 나옴
+
+
+def _moment(yid: str, i: int, m: dict) -> dict:
+    return {"segment_id": f"{yid}-{i}", "start_time": m["start_time"],
+            "end_time": m["end_time"], "score": m["score"],
+            "source": m.get("source")}
 
 
 def create_search_router(get_current_user) -> APIRouter:
@@ -162,11 +210,7 @@ def create_search_router(get_current_user) -> APIRouter:
 
         feature = indexer.resolve_path(r["feature_path"])
         raw = predict_moments(yid, str(feature), query, top_k)
-        results = [
-            {"segment_id": f"{yid}-{i}", "start_time": m["start_time"],
-             "end_time": m["end_time"], "score": m["score"]}
-            for i, m in enumerate(raw, start=1)
-        ]
+        results = [_moment(yid, i, m) for i, m in enumerate(raw, start=1)]
 
         if user_id:
             try:
@@ -209,11 +253,7 @@ def create_search_router(get_current_user) -> APIRouter:
                 raw = predict_moments(yid, str(feature), query, top_k)
             except Exception:
                 continue  # 한 영상이 실패해도 나머지는 계속
-            moments = [
-                {"segment_id": f"{yid}-{i}", "start_time": m["start_time"],
-                 "end_time": m["end_time"], "score": m["score"]}
-                for i, m in enumerate(raw, start=1)
-            ]
+            moments = [_moment(yid, i, m) for i, m in enumerate(raw, start=1)]
             if not moments:
                 continue
             videos.append({
@@ -265,3 +305,10 @@ def warmup_ai() -> None:
             predict_moments(rows[0]["youtube_video_id"], str(feature), "warm up", 1)
     except Exception:
         pass
+    try:
+        with indexer._AI_LOCK:
+            to_english("워밍업")  # 번역 모델 미리 올리기
+            from ai.features.fusion_search import get_semantic_model
+            get_semantic_model(model_type="finetuned")  # 한국어 MiniLM 미리 올리기
+    except Exception as e:
+        logger.warning("자막 검색/번역 모델 워밍업 실패: %s", e)
