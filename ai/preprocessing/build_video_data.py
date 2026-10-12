@@ -1,39 +1,43 @@
+import os
 import json
-import cv2
 from pathlib import Path
 
+from video_metadata import get_video_metadata
 
-video_path = "data/raw/test_audio.mp4"
+
+video_path = Path(
+    os.getenv(
+        "PINPOINT_VIDEO_PATH",
+        "data/raw/test_audio.mp4"
+    )
+)
+
+video_id = os.getenv(
+    "PINPOINT_VIDEO_ID",
+    "video_001"
+)
 
 segments_path = Path(
-    "data/processed/video_001/segments_with_subtitles.json"
+    f"data/processed/{video_id}/segments_with_subtitles.json"
 )
 
 output_path = Path(
-    "data/processed/video_001/video_data.json"
+    f"data/processed/{video_id}/video_data.json"
 )
-
-video_id = "video_001"
 
 
 # --------------------------------------------------
 # 영상 metadata 읽기
 # --------------------------------------------------
 
-cap = cv2.VideoCapture(video_path)
+metadata = get_video_metadata(
+    str(video_path)
+)
 
-if not cap.isOpened():
-    print("영상 파일을 열 수 없습니다.")
-    exit()
-
-fps = cap.get(cv2.CAP_PROP_FPS)
-frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-
-duration = frame_count / fps if fps > 0 else 0
-
-cap.release()
+fps = metadata["fps"]
+width = metadata["width"]
+height = metadata["height"]
+duration = metadata["duration"]
 
 
 # --------------------------------------------------
@@ -45,6 +49,7 @@ with open(
     "r",
     encoding="utf-8"
 ) as f:
+
     segments = json.load(f)
 
 
@@ -71,6 +76,7 @@ with open(
     "w",
     encoding="utf-8"
 ) as f:
+
     json.dump(
         video_data,
         f,
@@ -84,10 +90,23 @@ with open(
 # --------------------------------------------------
 
 print("=== Final Video Data ===")
+
 print(f"Video ID: {video_id}")
 print(f"Duration: {duration:.2f} seconds")
 print(f"FPS: {fps:.2f}")
-print(f"Resolution: {int(width)} x {int(height)}")
-print(f"Total Segments: {len(segments)}")
+print(
+    f"Resolution: "
+    f"{int(width)} x {int(height)}"
+)
+
+print(
+    f"Total Segments: "
+    f"{len(segments)}"
+)
+
 print()
-print(f"저장 위치: {output_path}")
+
+print(
+    f"저장 위치: "
+    f"{output_path}"
+)

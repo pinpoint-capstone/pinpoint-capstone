@@ -1,14 +1,23 @@
+import os
 import json
 import re
 from pathlib import Path
 
 
+video_id = os.getenv(
+    "PINPOINT_VIDEO_ID",
+    "video_001"
+)
+
 subtitle_path = Path(
-    "data/processed/video_001/subtitle.en-orig.vtt"
+    os.getenv(
+        "PINPOINT_SUBTITLE_PATH",
+        f"data/processed/{video_id}/subtitle.en-orig.vtt"
+    )
 )
 
 output_path = Path(
-    "data/processed/video_001/subtitle.json"
+    f"data/processed/{video_id}/subtitle.json"
 )
 
 
