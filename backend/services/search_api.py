@@ -56,6 +56,24 @@ def _score_of(r: dict) -> float:
     return float(s) if s is not None else 0.0
 
 
+def _overlap_ratio(a: dict, b: dict) -> float:
+    """두 구간이 겹치는 정도 (겹치는 길이 / 더 짧은 구간 길이)."""
+    inter = max(0.0, min(a["end_time"], b["end_time"]) - max(a["start_time"], b["start_time"]))
+    shortest = min(a["end_time"] - a["start_time"], b["end_time"] - b["start_time"])
+    return inter / shortest if shortest > 0 else 0.0
+
+
+def _dedupe(moments: list[dict], top_k: int, threshold: float = 0.5) -> list[dict]:
+    """점수 순서를 유지하면서, 이미 고른 구간과 많이 겹치는 구간은 건너뜁니다."""
+    kept = []
+    for m in moments:
+        if all(_overlap_ratio(m, k) < threshold for k in kept):
+            kept.append(m)
+        if len(kept) == top_k:
+            break
+    return kept
+
+
 def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5):
     """구간 검색. 한국어 자막이 있으면 자막(MiniLM) 우선, 없으면 영상(Moment-DETR)으로 검색합니다."""
     if indexer.USE_REAL_AI:
@@ -75,7 +93,7 @@ def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5
                     korean_query=query,
                     english_query=english_query,
                     video_duration=None,
-                    top_k=top_k,
+                    top_k=top_k * 3,  # 겹치는 구간을 거른 뒤 top_k개를 남기기 위해 넉넉히
                 )
             except Exception as e:
                 # 모델 경로 설정 누락 등으로 자막 검색이 안 되면 영상 검색으로 대신합니다.
@@ -84,13 +102,14 @@ def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5
 
                 raw = predict_moments_hybrid(
                     video_id=video_id, video_feature_path=feature_path,
-                    query=english_query, top_k=top_k,
+                    query=english_query, top_k=top_k * 3,
                 )
-        return [
+        moments = [
             {"start_time": r["start_time"], "end_time": r["end_time"],
              "score": _score_of(r), "source": r.get("source")}
             for r in raw
         ]
+        return _dedupe(moments, top_k)
     return [
         {"start_time": 10.0 + 15 * i, "end_time": 20.0 + 15 * i,
          "score": round(0.9 - 0.1 * i, 2), "source": "stub"}
