@@ -36,28 +36,41 @@ app.add_middleware(
 
 # ===================== 인증 =====================
 
-class AuthRequest(BaseModel):
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    name: str | None = None  # 선택. 표시용 이름
+
+class LoginRequest(BaseModel):
     email: str
     password: str
 
+
+def _user_name(user) -> str | None:
+    meta = getattr(user, "user_metadata", None) or {}
+    return meta.get("name")
+
+
 @app.post("/api/auth/signup")
-def signup(body: AuthRequest):
+def signup(body: SignupRequest):
     auth_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    payload = {"email": body.email, "password": body.password}
+    name = (body.name or "").strip()
+    if name:
+        payload["options"] = {"data": {"name": name}}
     try:
-        result = auth_client.auth.sign_up({
-            "email": body.email,
-            "password": body.password,
-        })
+        result = auth_client.auth.sign_up(payload)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     return {
         "user_id": result.user.id if result.user else None,
         "email": result.user.email if result.user else None,
+        "name": _user_name(result.user) if result.user else None,
     }
 
 @app.post("/api/auth/login")
-def login(body: AuthRequest):
+def login(body: LoginRequest):
     auth_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
     try:
         result = auth_client.auth.sign_in_with_password({
@@ -72,6 +85,7 @@ def login(body: AuthRequest):
         "refresh_token": result.session.refresh_token,
         "user_id": result.user.id,
         "email": result.user.email,
+        "name": _user_name(result.user),
     }
 
 
@@ -152,19 +166,50 @@ def get_history(user_id: str = Depends(get_current_user)):
 # ===================== 즐겨찾기 =====================
 
 class FavoriteRequest(BaseModel):
-    video_id: str
+    # 둘 중 하나만 보내면 됩니다. (둘 다 보내면 video_id를 사용)
+    video_id: str | None = None             # DB 내부 uuid
+    youtube_video_id: str | None = None     # 유튜브 11자리 ID
     start_time: float
     end_time: float
 
+
+def _video_brief(v: dict | None) -> dict | None:
+    if not v:
+        return None
+    return {
+        "video_id": v["video_id"],
+        "youtube_video_id": v.get("youtube_video_id"),
+        "title": v.get("title"),
+        "channel_name": v.get("channel_name"),
+        "thumbnail_url": v.get("thumbnail_url"),
+    }
+
+
+_VIDEO_BRIEF_COLUMNS = "video_id, youtube_video_id, title, channel_name, thumbnail_url"
+
+
 @app.post("/api/users/me/favorites")
 def add_favorite(body: FavoriteRequest, user_id: str = Depends(get_current_user)):
+    if not body.video_id and not body.youtube_video_id:
+        raise HTTPException(status_code=400, detail="video_id 또는 youtube_video_id가 필요합니다")
+
+    query = supabase.table("videos").select(_VIDEO_BRIEF_COLUMNS)
+    if body.video_id:
+        query = query.eq("video_id", body.video_id)
+    else:
+        query = query.eq("youtube_video_id", body.youtube_video_id)
+    found = query.limit(1).execute().data
+    if not found:
+        raise HTTPException(status_code=404, detail="등록되지 않은 영상입니다")
+    video = found[0]
+
     response = supabase.table("favorites").insert({
         "user_id": user_id,
-        "video_id": body.video_id,
+        "video_id": video["video_id"],
         "start_time": body.start_time,
         "end_time": body.end_time,
     }).execute()
-    return response.data[0]
+    return {**response.data[0], "video": _video_brief(video)}
 
 @app.delete("/api/users/me/favorites/{favorite_id}")
 def delete_favorite(favorite_id: str, user_id: str = Depends(get_current_user)):
@@ -173,13 +218,30 @@ def delete_favorite(favorite_id: str, user_id: str = Depends(get_current_user)):
 
 @app.get("/api/users/me/favorites")
 def get_favorites(user_id: str = Depends(get_current_user)):
-    response = (
+    favorites = (
         supabase.table("favorites")
         .select("*")
         .eq("user_id", user_id)
         .execute()
+        .data
     )
-    return {"favorites": response.data}
+
+    # 영상 정보를 한 번에 가져와서 각 즐겨찾기에 붙입니다.
+    video_ids = list({f["video_id"] for f in favorites if f.get("video_id")})
+    videos = {}
+    if video_ids:
+        rows = (
+            supabase.table("videos")
+            .select(_VIDEO_BRIEF_COLUMNS)
+            .in_("video_id", video_ids)
+            .execute()
+            .data
+        )
+        videos = {v["video_id"]: v for v in rows}
+
+    favorites = [{**f, "video": _video_brief(videos.get(f.get("video_id")))} for f in favorites]
+    favorites.sort(key=lambda f: f.get("created_at") or "", reverse=True)  # 최신순
+    return {"favorites": favorites}
 
 
 # ===================== 검색 (유튜브 / 분석 / 장면 검색) =====================

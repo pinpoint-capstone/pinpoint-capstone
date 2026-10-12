@@ -164,38 +164,22 @@
 
 ## 5. 회원가입 / 로그인
 `POST /api/auth/signup`
-```json
-{ "email": "user@example.com", "password": "비밀번호" }
-```
-응답 200
-```json
-{ "user_id": "uuid", "email": "user@example.com" }
-```
-
-`POST /api/auth/login` (같은 요청 형식)
+{ "email": "user@example.com", "password": "비밀번호", "name": "선택(표시 이름)" }
 
 응답 200
-```json
-{
-  "access_token": "...",
-  "refresh_token": "...",
-  "user_id": "uuid",
-  "email": "user@example.com"
-}
-```
-- 로그인 실패는 401이에요.
-- 이후 요청에는 `Authorization: Bearer {access_token}` 헤더를 보내요. 토큰은 약 1시간 후 만료돼요.
-- 이메일 인증 없이 가입 직후 로그인할 수 있어요.
+{ "user_id": "uuid", "email": "user@example.com", "name": "민선" }
 
-## 6. 검색 기록 / 즐겨찾기 (로그인 필수)
-- `GET /api/users/me/history` → `{ "history": [ { "query": "...", "searched_at": "..." } ] }` (최신순)
-- `POST /api/users/me/favorites`
-  ```json
-  { "video_id": "내부 uuid", "start_time": 132.4, "end_time": 145.0 }
-  ```
-  응답: 저장된 즐겨찾기 1개(`favorite_id` 포함)
-- `GET /api/users/me/favorites` → `{ "favorites": [ ... ] }`
-- `DELETE /api/users/me/favorites/{favorite_id}` → `{ "status": "deleted" }`
+`POST /api/auth/login` (email, password)
+응답 200
+{ "access_token": "...", "refresh_token": "...", "user_id": "uuid", "email": "...", "name": "민선" }
+
+## 6. 즐겨찾기
+- POST /api/users/me/favorites
+  { "youtube_video_id": "67AjHnTZo2M", "start_time": 12.74, "end_time": 15.1 }
+  (video_id(내부 uuid)로 보내도 됨. 등록 안 된 영상은 404)
+  응답: 즐겨찾기 정보 + "video": {video_id, youtube_video_id, title, channel_name, thumbnail_url}
+- GET /api/users/me/favorites → { "favorites": [ { ..., "video": {...} } ] } (최신순)
+- DELETE /api/users/me/favorites/{favorite_id}
 
 ## 7. 에러 응답 (공통)
 ```json
