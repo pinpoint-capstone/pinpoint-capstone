@@ -30,7 +30,7 @@ def _usable(feat) -> bool:
     return bool(feat) and (not USE_REAL_AI or feat.get("model_version") == MODEL_VERSION)
 
 
-def reclaim_stale(video_id: str, minutes: int = 15) -> bool:
+def reclaim_stale(video_id: str, minutes: int = 30) -> bool:
     """서버가 꺼지는 바람에 멈춘 PROCESSING을 PENDING으로 되돌립니다."""
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
     res = (
@@ -70,6 +70,14 @@ def _to_stored_path(p: str) -> str:
 def resolve_path(stored: str) -> Path:
     p = Path(stored)
     return p if p.is_absolute() else ROOT / p
+
+
+def _feature_ready(feat) -> bool:
+    """feature 기록이 쓸 수 있는 버전이고, 파일이 이 컴퓨터에 실제로 있는지 확인합니다.
+    (DB는 팀원과 공유하지만 feature 파일은 각자 컴퓨터에 있기 때문입니다.)"""
+    if not _usable(feat):
+        return False
+    return resolve_path(feat["feature_path"]).exists() if USE_REAL_AI else True
 
 
 def get_video(youtube_video_id: str) -> dict | None:
@@ -159,7 +167,7 @@ def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[
         .execute()
         .data
     )
-    fmap = {f["video_id"]: f["feature_path"] for f in feats if _usable(f)}
+    fmap = {f["video_id"]: f["feature_path"] for f in feats if _feature_ready(f)}
     return [{**r, "feature_path": fmap[r["video_id"]]} for r in rows if r["video_id"] in fmap]
 
 
@@ -185,7 +193,7 @@ def prepare(youtube_video_id: str, title: str, **meta) -> dict:
     vid = row["video_id"]
     feat = get_feature(vid)
 
-    if row["status"] == "INDEXED" and _usable(feat):
+    if row["status"] == "INDEXED" and _feature_ready(feat):
         supabase.table("videos").update({"last_used_at": _now()}).eq("video_id", vid).execute()
         return {"state": "READY", "video_id": vid, "feature_path": feat["feature_path"]}
 

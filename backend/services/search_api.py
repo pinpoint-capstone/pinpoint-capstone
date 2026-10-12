@@ -314,6 +314,8 @@ def create_search_router(get_current_user) -> APIRouter:
                     continue
                 row = indexer.get_video(yid)
                 status = row["status"] if row else "NOT_ANALYZED"
+                if status == "INDEXED":
+                    status = "PENDING"  # 분석은 됐지만 이 컴퓨터에 feature 파일이 없어 다시 분석이 필요함
                 # FAILED는 자동 재시도하지 않음 (사용자가 클릭하면 POST /api/search로 재시도)
                 if budget > 0 and status in ("NOT_ANALYZED", "PENDING"):
                     new_status, started = _try_start_analysis(yid, row, background_tasks)
