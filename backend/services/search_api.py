@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 
 import requests
@@ -21,6 +22,8 @@ logger = logging.getLogger("uvicorn.error")
 
 YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
+# 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
+SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
 
 
 class SearchRequest(BaseModel):
@@ -74,8 +77,18 @@ def _dedupe(moments: list[dict], top_k: int, threshold: float = 0.5) -> list[dic
     return kept
 
 
+def _visual_search(video_id: str, feature_path: str, english_query: str, top_k: int):
+    from ai.features.run_moment_detr_inference import predict_moments_hybrid
+
+    return predict_moments_hybrid(
+        video_id=video_id, video_feature_path=feature_path,
+        query=english_query, top_k=top_k,
+    )
+
+
 def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5):
-    """구간 검색. 한국어 자막이 있으면 자막(MiniLM) 우선, 없으면 영상(Moment-DETR)으로 검색합니다."""
+    """구간 검색. 한국어 자막이 있으면 자막(MiniLM) 우선, 없으면 영상(Moment-DETR)으로 검색합니다.
+    자막 유사도가 SUBTITLE_MIN_SCORE보다 낮은 결과는 버리고, 남는 게 없으면 영상 검색으로 넘어갑니다."""
     if indexer.USE_REAL_AI:
         from ai.features.fusion_search import predict_moments_fusion
 
@@ -98,12 +111,20 @@ def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5
             except Exception as e:
                 # 모델 경로 설정 누락 등으로 자막 검색이 안 되면 영상 검색으로 대신합니다.
                 logger.warning("fusion 검색 실패, 영상 검색으로 대체합니다: %s", e)
-                from ai.features.run_moment_detr_inference import predict_moments_hybrid
+                raw = _visual_search(video_id, feature_path, english_query, top_k * 3)
 
-                raw = predict_moments_hybrid(
-                    video_id=video_id, video_feature_path=feature_path,
-                    query=english_query, top_k=top_k * 3,
-                )
+            # 자막 유사도가 너무 낮은 결과(관련 없는 문장)는 버립니다.
+            kept = [r for r in raw
+                    if r.get("source") != "subtitle" or _score_of(r) >= SUBTITLE_MIN_SCORE]
+            if not kept and raw:
+                logger.info("자막 유사도가 모두 %.2f 미만이라 영상 검색으로 대체합니다.",
+                            SUBTITLE_MIN_SCORE)
+                try:
+                    kept = _visual_search(video_id, feature_path, english_query, top_k * 3)
+                except Exception as e:
+                    logger.warning("영상 검색 대체도 실패: %s", e)
+            raw = kept
+
         moments = [
             {"start_time": r["start_time"], "end_time": r["end_time"],
              "score": _score_of(r), "source": r.get("source")}
