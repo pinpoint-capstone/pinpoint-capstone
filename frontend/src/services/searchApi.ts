@@ -1,5 +1,5 @@
 
-import { SearchResponse, SearchResultItem } from '../types';
+import { SearchResponse, SearchResultItem, VideoMetadata } from '../types';
 import { DEFAULT_SEARCH_RESPONSES } from '../data/mockData';
 
 /**
@@ -185,11 +185,19 @@ export async function searchYouTubeVideos(
 
 // ===================== 다중 영상 AI 검색 =====================
 
+export type MomentSource = 'subtitle' | 'visual';
+
 export interface MomentResult {
   segment_id: string;
   start_time: number;
   end_time: number;
-  score: number;
+
+  // 자막 검색 결과에서는 null일 수 있습니다.
+  score: number | null;
+
+  // 최신 AI 모델에서 추가된 응답 필드입니다.
+  source?: MomentSource;
+  subtitle_score?: number | null;
 }
 
 export interface MultiSearchVideo {
@@ -200,13 +208,21 @@ export interface MultiSearchVideo {
     channel_name: string;
     thumbnail_url: string;
   };
-  best_score: number;
+  best_score: number | null;
   moments: MomentResult[];
 }
 
+export type PendingVideoStatus =
+  | 'NOT_ANALYZED'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'FAILED'
+  | 'TOO_LONG'
+  | 'NOT_FOUND';
+
 export interface PendingVideo {
   youtube_video_id: string;
-  status: 'NOT_ANALYZED' | 'PENDING' | 'PROCESSING' | 'FAILED';
+  status: PendingVideoStatus;
 }
 
 export interface MultiSearchResponse {
@@ -221,8 +237,8 @@ export interface MultiSearchResponse {
  * autoAnalyze=true:
  * 미분석 영상의 분석을 백그라운드에서 자동 시작합니다.
  *
- * 주의:
- * 분석을 시작했다고 즉시 결과가 반환되는 것은 아닙니다.
+ * 분석 중인 영상이 있으면 App.tsx에서
+ * 동일한 검색 요청을 3초 간격으로 다시 호출합니다.
  */
 export async function searchMultipleVideos(
   query: string,
@@ -255,10 +271,13 @@ export async function searchMultipleVideos(
 // ===================== 영상 분석 상태 확인 =====================
 
 export type VideoAnalysisStatus =
+  | 'NOT_ANALYZED'
   | 'PENDING'
   | 'PROCESSING'
   | 'INDEXED'
-  | 'FAILED';
+  | 'FAILED'
+  | 'TOO_LONG'
+  | 'NOT_FOUND';
 
 export interface VideoStatusResponse {
   youtube_video_id: string;
@@ -266,13 +285,6 @@ export interface VideoStatusResponse {
   error_message: string | null;
 }
 
-/**
- * 영상 분석 진행 상태를 확인합니다.
- *
- * INDEXED: 분석 완료
- * PROCESSING: 분석 중
- * FAILED: 분석 실패
- */
 export async function getYouTubeVideoStatus(
   youtubeVideoId: string
 ): Promise<VideoStatusResponse> {
@@ -307,14 +319,6 @@ export interface SingleSearchResponse {
   results?: MomentResult[];
 }
 
-/**
- * 개별 영상 검색 및 분석 시작.
- *
- * 미분석 영상은 202 PROCESSING을 반환할 수 있습니다.
- * 분석이 끝난 영상은 검색 결과를 반환합니다.
- *
- * 자동 분석에 실패한 영상을 사용자가 재시도할 때도 사용합니다.
- */
 export async function searchSingleVideo(
   youtubeVideoId: string,
   query: string,
@@ -341,16 +345,39 @@ export async function searchSingleVideo(
 
 // ===================== 백엔드 결과 → 프론트 데이터 =====================
 
+/**
+ * 실제 점수가 없는 경우 임의의 점수를 만들지 않습니다.
+ * 검색 결과 화면의 score는 숫자여야 하므로,
+ * 점수가 없는 항목은 결과 목록에서 제외합니다.
+ */
+function getMomentScore(moment: MomentResult): number | null {
+  const candidates =
+    moment.source === 'subtitle'
+      ? [moment.subtitle_score, moment.score]
+      : [moment.score, moment.subtitle_score];
+
+  for (const candidate of candidates) {
+    if (
+      typeof candidate === 'number' &&
+      Number.isFinite(candidate)
+    ) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
 export function convertMultiSearchResults(
   response: MultiSearchResponse
 ): {
   results: SearchResultItem[];
-  videos: Record<string, import('../types').VideoMetadata>;
+  videos: Record<string, VideoMetadata>;
 } {
   const results: SearchResultItem[] = [];
-  const videos: Record<string, import('../types').VideoMetadata> = {};
+  const videos: Record<string, VideoMetadata> = {};
 
-  for (const entry of response.videos) {
+  for (const entry of response.videos ?? []) {
     const video = entry.video;
 
     videos[video.video_id] = {
@@ -368,13 +395,23 @@ export function convertMultiSearchResults(
       chapters: [],
     };
 
-    for (const moment of entry.moments) {
+    for (const moment of entry.moments ?? []) {
+      const score = getMomentScore(moment);
+
+      if (score === null) {
+        console.warn(
+          '유효한 점수가 없어 검색 결과에서 제외했습니다:',
+          moment
+        );
+        continue;
+      }
+
       results.push({
         video_id: video.video_id,
         segment_id: moment.segment_id,
         start_time: moment.start_time,
         end_time: moment.end_time,
-        score: moment.score,
+        score,
       });
     }
   }

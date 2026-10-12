@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { VideoMetadata, SearchResultItem } from './types';
 import { MOCK_VIDEOS } from './data/mockData';
 import {
   searchYouTubeVideos,
   searchMultipleVideos,
   convertMultiSearchResults,
+  MultiSearchResponse,
 } from './services/searchApi';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
@@ -19,6 +20,17 @@ type AppView = 'home' | 'player' | 'browse' | 'auth' | 'library';
 interface User {
   name: string;
   email: string;
+}
+
+const POLLING_INTERVAL_MS = 3000;
+
+function hasPendingAnalysis(response: MultiSearchResponse): boolean {
+  return (response.pending ?? []).some(
+    (item) =>
+      item.status === 'NOT_ANALYZED' ||
+      item.status === 'PENDING' ||
+      item.status === 'PROCESSING'
+  );
 }
 
 export default function App() {
@@ -49,6 +61,18 @@ export default function App() {
   const [currentVideoId, setCurrentVideoId] = useState<string>('abc123');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // 초기 검색과 백그라운드 분석을 구분
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+
+  // 새로운 검색 또는 화면 이동 시 이전 검색을 무효화
+  const searchIdRef = useRef(0);
+
+  // 자동 재검색 타이머 관리
+  const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 사용자가 직접 선택한 검색 결과를 자동 갱신에서 보호
+  const selectedSegmentRef = useRef<SearchResultItem | null>(null);
+
   // 로그인 사용자 정보 복원
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -64,10 +88,37 @@ export default function App() {
     }
   });
 
+  const stopPolling = () => {
+    searchIdRef.current += 1;
+
+    if (pollingTimerRef.current !== null) {
+      clearTimeout(pollingTimerRef.current);
+      pollingTimerRef.current = null;
+    }
+
+    setIsLoading(false);
+    setIsAnalyzing(false);
+  };
+
+  // 컴포넌트 종료 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      searchIdRef.current += 1;
+
+      if (pollingTimerRef.current !== null) {
+        clearTimeout(pollingTimerRef.current);
+      }
+    };
+  }, []);
+
   // 브라우저 뒤로가기 / 앞으로가기 처리
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
+
+      if (path !== '/search') {
+        stopPolling();
+      }
 
       if (path === '/browse') {
         setCurrentView('browse');
@@ -93,6 +144,12 @@ export default function App() {
 
     if (!trimmedQuery) return;
 
+    // 이전 검색과 자동 재검색 중단
+    stopPolling();
+    const currentSearchId = searchIdRef.current;
+
+    selectedSegmentRef.current = null;
+
     setSearchQuery(trimmedQuery);
     setCurrentView('player');
 
@@ -104,12 +161,15 @@ export default function App() {
     }
 
     setIsLoading(true);
+    setIsAnalyzing(false);
     setSearchResults([]);
     setSelectedSegment(null);
 
     try {
       // 1. YouTube에서 관련 영상 검색
       const youtubeResponse = await searchYouTubeVideos(trimmedQuery, 5);
+
+      if (currentSearchId !== searchIdRef.current) return;
 
       const youtubeVideoIds = youtubeResponse.items.map(
         (video) => video.youtube_video_id
@@ -135,52 +195,119 @@ export default function App() {
         };
       }
 
-      // 3. 여러 영상의 AI 구간 검색
-      const multiResponse = await searchMultipleVideos(
-        trimmedQuery,
-        youtubeVideoIds,
-        3
-      );
-
-      // 4. 백엔드 응답을 기존 프론트 형식으로 변환
-      const { results, videos } = convertMultiSearchResults(multiResponse);
-
-      // 5. 실제 영상 정보 저장
       setVideosMap((previous) => ({
         ...previous,
         ...youtubeVideos,
-        ...videos,
       }));
 
-      // 6. AI 검색 결과 저장
-      setSearchResults(results);
-
-      if (results.length > 0) {
-        const matchedItem = targetVideoId
-          ? results.find(
-              (result) =>
-                result.video_id === targetVideoId ||
-                videos[result.video_id]?.youtube_video_id === targetVideoId
-            )
-          : null;
-
-        const selectedItem = matchedItem || results[0];
-
-        setSelectedSegment(selectedItem);
-        setCurrentVideoId(selectedItem.video_id);
-      } else if (youtubeVideoIds.length > 0) {
-        // AI 분석이 아직 완료되지 않은 경우
-        setCurrentVideoId(youtubeVideoIds[0]);
+      if (youtubeVideoIds.length === 0) {
+        setIsLoading(false);
+        return;
       }
 
-      console.log('YouTube 검색 결과:', youtubeResponse);
-      console.log('AI 다중 검색 결과:', multiResponse);
+      // 분석 결과가 없을 때 보여줄 첫 번째 YouTube 영상
+      setCurrentVideoId(youtubeVideoIds[0]);
+
+      // 3. 백엔드 응답을 화면에 반영하는 공통 함수
+      const applySearchResponse = (response: MultiSearchResponse) => {
+        if (currentSearchId !== searchIdRef.current) return;
+
+        const { results, videos } = convertMultiSearchResults(response);
+
+        setVideosMap((previous) => ({
+          ...previous,
+          ...videos,
+        }));
+
+        setSearchResults(results);
+
+        if (results.length > 0) {
+          const previousSelection = selectedSegmentRef.current;
+
+          // 사용자가 선택한 구간이 여전히 존재하면 선택 유지
+          const preservedItem = previousSelection
+            ? results.find(
+                (item) =>
+                  item.segment_id === previousSelection.segment_id &&
+                  item.video_id === previousSelection.video_id
+              )
+            : null;
+
+          const matchedItem = targetVideoId
+            ? results.find(
+                (item) =>
+                  item.video_id === targetVideoId ||
+                  videos[item.video_id]?.youtube_video_id === targetVideoId
+              )
+            : null;
+
+          const selectedItem =
+            preservedItem ||
+            previousSelection ||
+            matchedItem ||
+            results[0];
+
+          selectedSegmentRef.current = selectedItem;
+          setSelectedSegment(selectedItem);
+          setCurrentVideoId(selectedItem.video_id);
+        }
+
+        // 초기 검색 로딩은 첫 응답이 오면 종료
+        setIsLoading(false);
+
+        // 아직 분석 중인 영상이 있는지 확인
+        const stillAnalyzing = hasPendingAnalysis(response);
+        setIsAnalyzing(stillAnalyzing);
+
+        console.log('AI 다중 검색 결과:', response);
+
+        if (stillAnalyzing) {
+          // 응답을 받은 후 3초 기다렸다가 다시 검색
+          pollingTimerRef.current = setTimeout(() => {
+            pollingTimerRef.current = null;
+
+            if (currentSearchId !== searchIdRef.current) return;
+
+            void pollSearchResults();
+          }, POLLING_INTERVAL_MS);
+        }
+      };
+
+      // 4. 동일한 검색 조건으로 3초마다 재조회
+      const pollSearchResults = async () => {
+        if (currentSearchId !== searchIdRef.current) return;
+
+        try {
+          const response = await searchMultipleVideos(
+            trimmedQuery,
+            youtubeVideoIds,
+            3,
+            true
+          );
+
+          if (currentSearchId !== searchIdRef.current) return;
+
+          applySearchResponse(response);
+        } catch (error) {
+          if (currentSearchId !== searchIdRef.current) return;
+
+          console.error('AI 다중 검색 오류:', error);
+          setIsLoading(false);
+          setIsAnalyzing(false);
+        }
+      };
+
+      // 5. 최초 AI 검색 실행
+      await pollSearchResults();
     } catch (error) {
+      if (currentSearchId !== searchIdRef.current) return;
+
       console.error('실제 영상 검색 오류:', error);
       setSearchResults([]);
       setSelectedSegment(null);
-    } finally {
+      selectedSegmentRef.current = null;
       setIsLoading(false);
+      setIsAnalyzing(false);
     }
   };
 
@@ -210,6 +337,7 @@ export default function App() {
 
   // 검색 결과 클릭
   const handleSelectResult = (item: SearchResultItem) => {
+    selectedSegmentRef.current = item;
     setSelectedSegment(item);
     setCurrentVideoId(item.video_id);
     saveRecentSegment(item);
@@ -217,6 +345,9 @@ export default function App() {
 
   // 라이브러리에 저장된 구간 다시 열기
   const handleOpenLibrarySegment = (item: SearchResultItem) => {
+    stopPolling();
+
+    selectedSegmentRef.current = item;
     setSelectedSegment(item);
     setCurrentVideoId(item.video_id);
     saveRecentSegment(item);
@@ -236,6 +367,7 @@ export default function App() {
 
   // 홈으로 이동
   const handleNavigateHome = () => {
+    stopPolling();
     setCurrentView('home');
 
     if (
@@ -248,6 +380,7 @@ export default function App() {
 
   // 영상 탐색 화면으로 이동
   const handleNavigateBrowse = () => {
+    stopPolling();
     setCurrentView('browse');
 
     if (
@@ -260,6 +393,7 @@ export default function App() {
 
   // 로그인 화면으로 이동
   const handleNavigateAuth = () => {
+    stopPolling();
     setCurrentView('auth');
 
     if (
@@ -272,6 +406,7 @@ export default function App() {
 
   // 라이브러리 화면으로 이동
   const handleNavigateLibrary = () => {
+    stopPolling();
     setCurrentView('library');
 
     if (
@@ -284,6 +419,7 @@ export default function App() {
 
   // 로그인 성공
   const handleLoginSuccess = (loggedInUser: User) => {
+    stopPolling();
     setUser(loggedInUser);
     setCurrentView('home');
 
@@ -294,6 +430,7 @@ export default function App() {
 
   // 로그아웃
   const handleLogout = () => {
+    stopPolling();
     localStorage.removeItem('pinpoint-user');
     setUser(null);
     setCurrentView('home');
@@ -347,7 +484,7 @@ export default function App() {
           selectedSegment={selectedSegment}
           searchResults={searchResults}
           videosMap={videosMap}
-          isLoading={isLoading}
+          isLoading={isLoading || isAnalyzing}
           searchQuery={searchQuery}
           onSelectResult={handleSelectResult}
           onNavigateHome={handleNavigateHome}

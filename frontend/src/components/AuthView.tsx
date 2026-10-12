@@ -27,34 +27,71 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  if (mode === 'signup' && !name.trim()) {
-    setError('이름을 입력해주세요.');
-    return;
-  }
+    if (mode === 'signup' && !name.trim()) {
+      setError('이름을 입력해주세요.');
+      return;
+    }
 
-  if (!email.trim()) {
-    setError('이메일을 입력해주세요.');
-    return;
-  }
+    if (!email.trim()) {
+      setError('이메일을 입력해주세요.');
+      return;
+    }
 
-  if (!password) {
-    setError('비밀번호를 입력해주세요.');
-    return;
-  }
+    if (!password) {
+      setError('비밀번호를 입력해주세요.');
+      return;
+    }
 
-  if (mode === 'signup' && password !== passwordConfirm) {
-    setError('비밀번호가 일치하지 않습니다.');
-    return;
-  }
+    if (mode === 'signup' && password !== passwordConfirm) {
+      setError('비밀번호가 일치하지 않습니다.');
+      return;
+    }
 
-  // 회원가입: 실제 백엔드 API 사용
-  if (mode === 'signup') {
+    // 회원가입: 실제 백엔드 API 사용
+    if (mode === 'signup') {
+      try {
+        const response = await fetch(
+          'http://127.0.0.1:8000/api/auth/signup',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.detail || '회원가입에 실패했습니다.');
+          return;
+        }
+
+        alert('회원가입이 완료되었습니다. 로그인해주세요.');
+
+        setMode('login');
+        setError('');
+        setPassword('');
+        setPasswordConfirm('');
+      } catch (error) {
+        console.error('회원가입 API 오류:', error);
+        setError('서버에 연결할 수 없습니다.');
+      }
+
+      return;
+    }
+
+    // 로그인: 실제 백엔드 API 사용
     try {
       const response = await fetch(
-        'http://127.0.0.1:8000/api/auth/signup',
+        'http://127.0.0.1:8000/api/auth/login',
         {
           method: 'POST',
           headers: {
@@ -70,75 +107,40 @@ export const AuthView: React.FC<AuthViewProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.detail || '회원가입에 실패했습니다.');
+        setError(data.detail || '로그인에 실패했습니다.');
         return;
       }
 
-      alert('회원가입이 완료되었습니다. 로그인해주세요.');
+      const loginEmail = data.email || email.trim();
 
-      setMode('login');
-      setError('');
-      setPassword('');
-      setPasswordConfirm('');
+      const user = {
+        name: loginEmail.split('@')[0],
+        email: loginEmail,
+      };
+
+      // 사용자 정보 저장
+      localStorage.setItem(
+        'pinpoint-user',
+        JSON.stringify(user)
+      );
+
+      // 이후 즐겨찾기 API 인증에 사용할 토큰 저장
+      localStorage.setItem(
+        'pinpoint-access-token',
+        data.access_token
+      );
+
+      localStorage.setItem(
+        'pinpoint-refresh-token',
+        data.refresh_token
+      );
+
+      onLoginSuccess(user);
     } catch (error) {
-      console.error('회원가입 API 오류:', error);
+      console.error('로그인 API 오류:', error);
       setError('서버에 연결할 수 없습니다.');
     }
-
-    return;
-  }
-
-  // 로그인: 실제 백엔드 API 사용
-try {
-  const response = await fetch(
-    'http://127.0.0.1:8000/api/auth/login',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-        password,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    setError(data.detail || '로그인에 실패했습니다.');
-    return;
-  }
-
-  const user = {
-    name: 'PinPoint 사용자',
-    email: data.email || email.trim(),
   };
-
-  // 사용자 정보 저장
-  localStorage.setItem(
-    'pinpoint-user',
-    JSON.stringify(user)
-  );
-
-  // 이후 즐겨찾기 API 인증에 사용할 토큰 저장
-  localStorage.setItem(
-    'pinpoint-access-token',
-    data.access_token
-  );
-
-  localStorage.setItem(
-    'pinpoint-refresh-token',
-    data.refresh_token
-  );
-
-  onLoginSuccess(user);
-} catch (error) {
-  console.error('로그인 API 오류:', error);
-  setError('서버에 연결할 수 없습니다.');
-  }
-};
 
   const changeMode = (nextMode: 'login' | 'signup') => {
     setMode(nextMode);
@@ -180,11 +182,10 @@ try {
             <button
               type="button"
               onClick={() => changeMode('login')}
-              className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                mode === 'login'
+              className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'login'
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
-              }`}
+                }`}
             >
               로그인
             </button>
@@ -192,11 +193,10 @@ try {
             <button
               type="button"
               onClick={() => changeMode('signup')}
-              className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                mode === 'signup'
+              className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${mode === 'signup'
                   ? 'bg-white text-blue-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
-              }`}
+                }`}
             >
               회원가입
             </button>
