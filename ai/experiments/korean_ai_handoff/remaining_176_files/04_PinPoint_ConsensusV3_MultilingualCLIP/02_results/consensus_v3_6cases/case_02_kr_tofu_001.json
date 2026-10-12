@@ -1,0 +1,79 @@
+{
+  "name": "두부 양념 준비",
+  "video_id": "kr_tofu_001",
+  "query_ko": "두부 양념을 준비하는 장면",
+  "query_en": "preparing seasoning sauce for tofu",
+  "video_duration": 164.98,
+  "visual_model": "Moment-DETR",
+  "subtitle_model": "Fine-tuned MiniLM",
+  "candidate_top_k": 3,
+  "visual": [
+    {
+      "video_id": "kr_tofu_001",
+      "query": "preparing seasoning sauce for tofu",
+      "start_time": 101.7545,
+      "end_time": 119.1551,
+      "score": 0.986
+    },
+    {
+      "video_id": "kr_tofu_001",
+      "query": "preparing seasoning sauce for tofu",
+      "start_time": 90.2136,
+      "end_time": 151.3155,
+      "score": 0.9176
+    },
+    {
+      "video_id": "kr_tofu_001",
+      "query": "preparing seasoning sauce for tofu",
+      "start_time": 14.7054,
+      "end_time": 98.2738,
+      "score": 0.9029
+    }
+  ],
+  "ko": [
+    {
+      "start_time": 137.58,
+      "end_time": 143.58,
+      "text": "그리고 만들어둔 양념장을 두부 위에 그대로 부어주세요 이렇게 양념장을 끼얹은 두부가 완성됐어요",
+      "score": 0.7083,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 137.58,
+      "end_time": 140.86,
+      "text": "그리고 만들어둔 양념장을 두부 위에 그대로 부어주세요",
+      "score": 0.699,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 137.58,
+      "end_time": 145.54,
+      "text": "그리고 만들어둔 양념장을 두부 위에 그대로 부어주세요 이렇게 양념장을 끼얹은 두부가 완성됐어요 보기만 해도 정말 먹음직스럽죠?",
+      "score": 0.6514,
+      "source": "subtitle"
+    }
+  ],
+  "en": [
+    {
+      "start_time": 111.26,
+      "end_time": 116.02,
+      "text": "재료를 다 넣었으면 뜨거운 기름 한 숟가락을 부어서 향을 확 끓어 올려주세요",
+      "score": 0.2509,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 4.74,
+      "end_time": 8.7,
+      "text": "순식간에 정말 맛있는 두부 요리 하나가 완성돼요",
+      "score": 0.2393,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 160.62,
+      "end_time": 164.98,
+      "text": "팔로우 해두시면 요리할 때 실패하지 않도록 제가 제대로 알려드릴게요",
+      "score": 0.2381,
+      "source": "subtitle"
+    }
+  ]
+}

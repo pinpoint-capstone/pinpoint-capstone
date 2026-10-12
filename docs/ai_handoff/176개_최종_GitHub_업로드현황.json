@@ -1,0 +1,1063 @@
+{
+  "branch": "feature/korean-ai-fusion",
+  "original_count": 176,
+  "items": [
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/KOREAN_AI_INTEGRATION_restored_20261010.md",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/KOREAN_AI_INTEGRATION.md",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/consensus_rerank.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/features/consensus_rerank.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/fusion_search_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/AI_Backup/fusion_search_20261010.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/fusion_search_FINAL_restored_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/features/fusion_search.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/fusion_search_before_model_connection_20261010_130236.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/AI_Backup/fusion_search_before_model_connection_20261010_130236.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/fusion_search_before_model_selection_20261010_130203.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/AI_Backup/fusion_search_20261010.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/minilm_README_restored_20261010.md",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_minilm/README.md",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/minilm_evaluate_restored_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_minilm/evaluate.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/minilm_full_validation_metrics_restored_20261010.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_minilm/results/full_validation_metrics.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/minilm_prepare_data_restored_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_minilm/prepare_data.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/minilm_train_restored_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_minilm/train.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/consensus_6queries_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/consensus_6queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/consensus_v2_12queries_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/consensus_v2_12queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/detergent_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/detergent_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/fusion_baseline_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/fusion_baseline_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/fusion_new_3queries_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/fusion_new_3queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/fusion_start_time_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/fusion_start_time_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/minilm_baseline_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/minilm_baseline_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/minilm_finetuning_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/minilm_finetuning_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/minilm_full_validation_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/minilm_full_validation_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/minilm_full_validation_verification_20261010.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/minilm_full_validation_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/minilm_fusion_6queries_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/minilm_fusion_6queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/pinpoint_ai_experiment_summary.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/pinpoint_ai_experiment_summary.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/rice_washing_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/rice_washing_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/seasoning_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/seasoning_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/squat_4methods_comparison.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/squat_4methods_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/public_experiment_results_20261010/squat_ground_truth.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_video/results/squat_ground_truth.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/scratch_clip_align_best_ORIGINAL.ckpt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/moment_detr/scratch_clip_align_best_ORIGINAL.ckpt",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/transcribe_service_FINAL_restored_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/preprocessing/transcribe_service.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/AI_Backup/transcribe_service_before_path_fix_20261010.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/AI_Backup/transcribe_service_before_path_fix_20261010.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/PinPoint_Korean_Video_Test.ipynb",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/PinPoint_Korean_Video_Test.ipynb",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/__pycache__/fusion_experiment.cpython-313.pyc",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/clip_features/kr_daiso_001_clip_features.pt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/clip_features/02_Korean_Video_Test/clip_features/kr_daiso_001_clip_features.pt",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/clip_features/kr_kitchen_001_clip_features.pt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/clip_features/02_Korean_Video_Test/clip_features/kr_kitchen_001_clip_features.pt",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/clip_features/kr_tofu_001_clip_features.pt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/clip_features/02_Korean_Video_Test/clip_features/kr_tofu_001_clip_features.pt",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/detergent_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/02_Korean_Video_Test/detergent_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/fusion_baseline_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/02_Korean_Video_Test/fusion_baseline_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/fusion_experiment.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/fusion_experiment.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/indexer_before_subtitle_integration.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/indexer_before_subtitle_integration.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/kr_daiso_001_subtitles.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/kr_daiso_001_subtitles.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/kr_kitchen_001_subtitles.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/kr_kitchen_001_subtitles.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/kr_tofu_001_subtitles.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/kr_tofu_001_subtitles.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/pinpoint_ai_experiment_summary.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/02_Korean_Video_Test/pinpoint_ai_experiment_summary.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/rice_washing_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/02_Korean_Video_Test/rice_washing_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/run_moment_detr_inference_before_fusion.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/features/run_moment_detr_inference.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/search_api_before_fusion.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/02_Korean_Video_Test/search_api_before_fusion.py",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/seasoning_evaluation.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/02_Korean_Video_Test/seasoning_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/squat_ground_truth.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/squat_ground_truth.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/squat_subtitles.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/squat_subtitles.json",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/다이소추천템영상.mp4",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/다이소추천템영상.mp4",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/두부요리영상.mp4",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/두부요리영상.mp4",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/스쿼트자세설명영상.mp4",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/스쿼트자세설명영상.mp4",
+      "사유": ""
+    },
+    {
+      "원본": "02_Korean_Video_Test/주방추천템영상.mp4",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/02_Korean_Video_Test/주방추천템영상.mp4",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/TL_12.음식요리.tar",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/TL_12.음식요리.tar",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/VL_12.음식요리.tar",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/VL_12.음식요리.tar",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/consensus_6queries_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/consensus_6queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/consensus_v2_12queries_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/consensus_v2_12queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/fusion_new_3queries_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/fusion_new_3queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/fusion_start_time_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/fusion_start_time_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/korean_candidates_test.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/korean_candidates_test.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/korean_candidates_train.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/korean_candidates_train.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/korean_candidates_val.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/korean_candidates_val.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/korean_subtitle_candidates.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/korean_subtitle_candidates.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/korean_subtitle_candidates_val_clean.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/korean_subtitle_candidates_val_clean.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/korean_subtitle_candidates_val_official.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/korean_subtitle_candidates_val_official.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_baseline_evaluation.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_baseline_evaluation.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/1_Pooling/config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/1_Pooling/config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/README.md",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/README.md",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/config_sentence_transformers.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/config_sentence_transformers.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/model.safetensors",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/model.safetensors",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/modules.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/modules.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/optimizer.pt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/optimizer.pt",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/rng_state.pth",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/rng_state.pth",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/scaler.pt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/scaler.pt",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/scheduler.pt",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/scheduler.pt",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/sentence_bert_config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/sentence_bert_config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/special_tokens_map.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/special_tokens_map.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/tokenizer.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/tokenizer.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/tokenizer_config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/tokenizer_config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/trainer_state.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/trainer_state.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/checkpoint-969/training_args.bin",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/training_args.bin",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/1_Pooling/config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/1_Pooling/config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/README.md",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_finetuned/final_model/README.md",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/config_sentence_transformers.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/config_sentence_transformers.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/model.safetensors",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/model_assets/minilm/checkpoint-969/model.safetensors",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/modules.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/modules.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/sentence_bert_config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/sentence_bert_config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/special_tokens_map.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/special_tokens_map.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/tokenizer.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/tokenizer.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuned/final_model/tokenizer_config.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/03_Korean_Training_Data/minilm_finetuned/checkpoint-969/tokenizer_config.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_finetuning_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_finetuning_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_full_validation_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_full_validation_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_full_validation_verification_20261010.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_full_validation_verification_20261010.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_fusion_6queries_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_fusion_6queries_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_train_pairs.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_train_pairs.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_train_pairs_clean.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_train_pairs_clean.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/minilm_val_pairs.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/minilm_val_pairs.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/prepare_data_verification_20261010/minilm_train_pairs.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/prepare_data_verification_20261010/minilm_train_pairs.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/prepare_data_verification_20261010/minilm_train_pairs_clean.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/prepare_data_verification_20261010/minilm_train_pairs_clean.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/prepare_data_verification_20261010/minilm_val_pairs.jsonl",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/prepare_data_verification_20261010/minilm_val_pairs.jsonl",
+      "사유": ""
+    },
+    {
+      "원본": "03_Korean_Training_Data/squat_4methods_comparison.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/03_Korean_Training_Data/squat_4methods_comparison.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/01_code/__pycache__/consensus_v3.cpython-313.pyc",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/01_code/consensus_v3.py",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/code/04_PinPoint_ConsensusV3_MultilingualCLIP/01_code/consensus_v3.py",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_01_kr_tofu_001.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_01_kr_tofu_001.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_02_kr_tofu_001.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_02_kr_tofu_001.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_03_kr_kitchen_001.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_03_kr_kitchen_001.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_04_kr_kitchen_001.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_04_kr_kitchen_001.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_05_kr_daiso_001.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_05_kr_daiso_001.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_06_kr_daiso_001.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/consensus_v3_6cases/case_06_kr_daiso_001.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/tofu_minilm_top3_step26.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/tofu_minilm_top3_step26.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/tofu_multilingual_clip_frame_search_step36.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/tofu_multilingual_clip_frame_search_step36.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/tofu_visual_top3_step24.json",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/02_results/tofu_visual_top3_step24.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/consensus_v1_v2_v3_6cases_step32.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/results/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/consensus_v1_v2_v3_6cases_step32.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/consensus_v3_6cases_manifest.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/additional_materials/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/consensus_v3_6cases_manifest.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/consensus_v3_failure_diagnosis_step33.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/results/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/consensus_v3_failure_diagnosis_step33.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/english_vs_multilingual_clip_6cases_step39.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/results/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/english_vs_multilingual_clip_6cases_step39.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/multilingual_clip_6cases_frame_evaluation_step37.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/results/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/multilingual_clip_6cases_frame_evaluation_step37.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/tofu_consensus_v1_v2_v3_step28.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/results/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/tofu_consensus_v1_v2_v3_step28.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/tofu_consensus_v3_step27.json",
+      "상태": "이미GitHub존재",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/results/04_PinPoint_ConsensusV3_MultilingualCLIP/03_evaluation/tofu_consensus_v3_step27.json",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/00d4a90ed3ab11cb356ddc3c64c3858a7ace82ff.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/1ab64f94053fdfbd5f943b451df1cd02140e7e70.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/4b5316fd1c30c686639975a610ca80aa50987aa1.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/4e09f293dfe90bba49f87cfe7996271f07be2666.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/5fd10429389515d3e5cccdeda08cae5fea1ae82e.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/7b968c09938603158413ea2c91af82e82158ebb6db901a6cf97c28ce7d7ebc6d.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/8885f9a958fdc9be2d592c125ff53438ec8b04d8.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/94855c4d00a61b152e3713bd9701adb6d87b2672.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/b974b349cb2d419ada11181750a733ff82f291ad.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/d12568dc7300970a4d3dbb49068ad16cd89b99840b74b026f8e48071e9414f74.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/e7b0375001f109a6b8873d756ad4f7bbb15fbaa5.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/e837bab60a5d204e29622d127c2dafe508aa0731.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/.locks/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/f930bdc88c40a163884a6264ebd3bd10688ae1af.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/CACHEDIR.TAG",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/.huggingface-shared-blobs",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/af/af0117141167690c7a5a67c392fdcc28e3f7d6ec9a4941e6dcb9f7c4975144df",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/af/af0117141167690c7a5a67c392fdcc28e3f7d6ec9a4941e6dcb9f7c4975144df.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/af/af0117141167690c7a5a67c392fdcc28e3f7d6ec9a4941e6dcb9f7c4975144df.refs",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/ea/eabac7bf21ac98fab48e65bbdb35a2c7e279a57a24f75f3fc195f31502bdfe77",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/ea/eabac7bf21ac98fab48e65bbdb35a2c7e279a57a24f75f3fc195f31502bdfe77.lock",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/blobs/ea/eabac7bf21ac98fab48e65bbdb35a2c7e279a57a24f75f3fc195f31502bdfe77.refs",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/.no_exist/58edf8cada9e398793dca955574a48cbb7f18be2/adapter_config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/.no_exist/58edf8cada9e398793dca955574a48cbb7f18be2/added_tokens.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/.no_exist/58edf8cada9e398793dca955574a48cbb7f18be2/chat_template.jinja",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/.no_exist/58edf8cada9e398793dca955574a48cbb7f18be2/preprocessor_config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/.no_exist/58edf8cada9e398793dca955574a48cbb7f18be2/processor_config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/.no_exist/58edf8cada9e398793dca955574a48cbb7f18be2/video_preprocessor_config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/00d4a90ed3ab11cb356ddc3c64c3858a7ace82ff",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/1ab64f94053fdfbd5f943b451df1cd02140e7e70",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/4b5316fd1c30c686639975a610ca80aa50987aa1",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/4e09f293dfe90bba49f87cfe7996271f07be2666",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/5fd10429389515d3e5cccdeda08cae5fea1ae82e",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/7b968c09938603158413ea2c91af82e82158ebb6db901a6cf97c28ce7d7ebc6d",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/8885f9a958fdc9be2d592c125ff53438ec8b04d8",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/94855c4d00a61b152e3713bd9701adb6d87b2672",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/b974b349cb2d419ada11181750a733ff82f291ad",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/d12568dc7300970a4d3dbb49068ad16cd89b99840b74b026f8e48071e9414f74",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/e7b0375001f109a6b8873d756ad4f7bbb15fbaa5",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/e837bab60a5d204e29622d127c2dafe508aa0731",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/blobs/f930bdc88c40a163884a6264ebd3bd10688ae1af",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/refs/main",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/1_Pooling/config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/2_Dense/config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/2_Dense/model.safetensors",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/README.md",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/config_sentence_transformers.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/model.safetensors",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/modules.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/sentence_bert_config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/special_tokens_map.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/tokenizer.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/tokenizer_config.json",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/04_models/huggingface_cache/models--sentence-transformers--clip-ViT-B-32-multilingual-v1/snapshots/58edf8cada9e398793dca955574a48cbb7f18be2/vocab.txt",
+      "상태": "불필요한캐시제외",
+      "GitHub경로": "",
+      "사유": ""
+    },
+    {
+      "원본": "04_PinPoint_ConsensusV3_MultilingualCLIP/PinPoint_ConsensusV3_MultilingualCLIP.ipynb",
+      "상태": "업로드예정",
+      "GitHub경로": "ai/experiments/korean_ai_handoff/remaining_176_files/04_PinPoint_ConsensusV3_MultilingualCLIP/PinPoint_ConsensusV3_MultilingualCLIP.ipynb",
+      "사유": ""
+    }
+  ],
+  "note": "캐시 및 중복 파일은 제외. 권한 미확인 자료는 별도 보관."
+}

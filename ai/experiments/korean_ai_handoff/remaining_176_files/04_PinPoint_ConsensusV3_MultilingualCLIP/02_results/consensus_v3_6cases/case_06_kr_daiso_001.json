@@ -1,0 +1,79 @@
+{
+  "name": "다이소 시트 세제",
+  "video_id": "kr_daiso_001",
+  "query_ko": "여행용 시트 세제를 보여주는 장면",
+  "query_en": "showing travel laundry detergent sheets",
+  "video_duration": 32.08,
+  "visual_model": "Moment-DETR",
+  "subtitle_model": "Fine-tuned MiniLM",
+  "candidate_top_k": 3,
+  "visual": [
+    {
+      "video_id": "kr_daiso_001",
+      "query": "showing travel laundry detergent sheets",
+      "start_time": 16.4597,
+      "end_time": 24.5203,
+      "score": 0.9745
+    },
+    {
+      "video_id": "kr_daiso_001",
+      "query": "showing travel laundry detergent sheets",
+      "start_time": 25.991,
+      "end_time": 29.1156,
+      "score": 0.8252
+    },
+    {
+      "video_id": "kr_daiso_001",
+      "query": "showing travel laundry detergent sheets",
+      "start_time": 5.9002,
+      "end_time": 14.7242,
+      "score": 0.2676
+    }
+  ],
+  "ko": [
+    {
+      "start_time": 13.72,
+      "end_time": 15.16,
+      "text": "빨리 편하게 해주는 시트 세제",
+      "score": 0.5068,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 13.72,
+      "end_time": 17.08,
+      "text": "빨리 편하게 해주는 시트 세제 톡 뜯어 여행 갈 때 들고 가기도 좋고",
+      "score": 0.4634,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 13.72,
+      "end_time": 19.08,
+      "text": "빨리 편하게 해주는 시트 세제 톡 뜯어 여행 갈 때 들고 가기도 좋고 섬유인지 안 넣어도 향기가 대박이에요",
+      "score": 0.4242,
+      "source": "subtitle"
+    }
+  ],
+  "en": [
+    {
+      "start_time": 22.68,
+      "end_time": 26.8,
+      "text": "탱글티즈랑 비슷한 비슷한 요거 두 개 현상모듣게 잘 빗겨서 여행 갈 때 꼭 챙겨가요",
+      "score": 0.3398,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 22.68,
+      "end_time": 29.0,
+      "text": "탱글티즈랑 비슷한 비슷한 요거 두 개 현상모듣게 잘 빗겨서 여행 갈 때 꼭 챙겨가요 집에 두면 한층 더 귀여워지는 인테리어템",
+      "score": 0.2921,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 22.68,
+      "end_time": 24.48,
+      "text": "탱글티즈랑 비슷한 비슷한 요거 두 개",
+      "score": 0.2813,
+      "source": "subtitle"
+    }
+  ]
+}

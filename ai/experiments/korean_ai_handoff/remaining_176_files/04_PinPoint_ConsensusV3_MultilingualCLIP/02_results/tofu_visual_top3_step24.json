@@ -1,0 +1,33 @@
+{
+  "experiment": "Consensus V3 - Visual candidate extraction",
+  "video_id": "kr_tofu_001",
+  "query_ko": "두부를 칼로 자르는 장면",
+  "query_en": "cutting tofu with a knife",
+  "video_duration": 165.0,
+  "method": "Moment-DETR Visual-only",
+  "checkpoint": "/content/drive/MyDrive/pinpoint_capstone/02_Korean_Video_Test/AI_Backup/scratch_clip_align_best_ORIGINAL.ckpt",
+  "top_k": 3,
+  "predictions": [
+    {
+      "video_id": "kr_tofu_001",
+      "query": "cutting tofu with a knife",
+      "start_time": 101.7673,
+      "end_time": 118.9725,
+      "score": 0.9842
+    },
+    {
+      "video_id": "kr_tofu_001",
+      "query": "cutting tofu with a knife",
+      "start_time": 86.5279,
+      "end_time": 102.7907,
+      "score": 0.9608
+    },
+    {
+      "video_id": "kr_tofu_001",
+      "query": "cutting tofu with a knife",
+      "start_time": 116.1929,
+      "end_time": 135.9028,
+      "score": 0.7395
+    }
+  ]
+}
