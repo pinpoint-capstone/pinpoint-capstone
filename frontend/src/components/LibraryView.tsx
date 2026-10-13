@@ -8,7 +8,7 @@ import {
   Trash2,
 } from 'lucide-react';
 
-import { SearchResultItem } from '../types';
+import { SearchResultItem, VideoMetadata } from '../types';
 import { MOCK_VIDEOS } from '../data/mockData';
 import { formatTime } from '../utils/formatters';
 
@@ -16,6 +16,7 @@ type LibraryTab = 'saved' | 'recent';
 
 interface LibraryViewProps {
   onOpenSegment: (item: SearchResultItem) => void;
+  videosMap: Record<string, VideoMetadata>;
 }
 
 interface BackendFavorite {
@@ -29,6 +30,7 @@ interface BackendFavorite {
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
   onOpenSegment,
+  videosMap,
 }) => {
   const [activeTab, setActiveTab] = useState<LibraryTab>('saved');
 
@@ -235,7 +237,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     segment: SearchResultItem,
     type: 'saved' | 'recent'
   ) => {
-    const video = MOCK_VIDEOS[segment.video_id];
+    const video = videosMap[segment.video_id] ?? MOCK_VIDEOS[segment.video_id];
 
     return (
       <div

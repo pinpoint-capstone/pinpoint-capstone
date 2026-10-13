@@ -127,6 +127,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [duration, setDuration] = useState(video.totalDuration || 0);
   const [isMuted, setIsMuted] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
   const [playerError, setPlayerError] = useState('');
 
@@ -196,7 +197,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       .then((YT) => {
         if (cancelled || !container.isConnected) return;
 
-        createdPlayer = new YT.Player(container, {
+        
+const playerMount = document.createElement('div');
+container.appendChild(playerMount);
+
+createdPlayer = new YT.Player(playerMount, {
+          width: '100%',
+          height: '100%',
           videoId: video.youtube_video_id!,
           playerVars: {
             autoplay: 0,
@@ -329,51 +336,107 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, [selectedSegment]);
 
   // 기존 즐겨찾기 저장 기능 유지
-  const handleSaveSegment = async () => {
-    if (!selectedSegment) return;
+  
+const handleSaveSegment = async () => {
+  if (!selectedSegment || isSaving) return;
 
-    const accessToken = localStorage.getItem('pinpoint-access-token');
+  const accessToken = localStorage.getItem('pinpoint-access-token');
 
-    if (!accessToken) {
-      alert('로그인 후 이용해주세요.');
+  if (!accessToken) {
+    alert('로그인 후 이용해주세요.');
+    return;
+  }
+
+  setIsSaving(true);
+
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem('pinpoint-saved-segments') || '[]'
+    ) as SearchResultItem[];
+
+    // 서버에 실제 저장되어 있는 즐겨찾기 조회
+    const listResponse = await fetch(
+      `${apiBaseUrl}/api/users/me/favorites`,
+      { headers }
+    );
+
+    if (!listResponse.ok) {
+      throw new Error(`즐겨찾기 조회 실패: ${listResponse.status}`);
+    }
+
+    const listData = await listResponse.json();
+
+    // 응답이 배열이거나 favorites 배열을 포함하는 형태 지원
+    const favorites = Array.isArray(listData)
+      ? listData
+      : Array.isArray(listData.favorites)
+        ? listData.favorites
+        : null;
+
+    if (!favorites) {
+      throw new Error('즐겨찾기 목록 응답 형식을 확인해야 합니다.');
+    }
+
+    const existingFavorite = favorites.find(
+      (item: {
+        favorite_id?: string;
+        video_id: string;
+        start_time: number;
+        end_time: number;
+      }) =>
+        item.video_id === selectedSegment.video_id &&
+        Number(item.start_time) === Number(selectedSegment.start_time) &&
+        Number(item.end_time) === Number(selectedSegment.end_time)
+    );
+
+    if (isSaved) {
+      // 저장 취소: 서버 DB에서도 실제 삭제
+      if (existingFavorite) {
+        if (!existingFavorite.favorite_id) {
+          throw new Error('삭제할 favorite_id가 없습니다.');
+        }
+
+        const deleteResponse = await fetch(
+          `${apiBaseUrl}/api/users/me/favorites/${existingFavorite.favorite_id}`,
+          {
+            method: 'DELETE',
+            headers,
+          }
+        );
+
+        if (!deleteResponse.ok) {
+          throw new Error(`즐겨찾기 삭제 실패: ${deleteResponse.status}`);
+        }
+      }
+
+      const updated = saved.filter(
+        (item) => item.segment_id !== selectedSegment.segment_id
+      );
+
+      localStorage.setItem(
+        'pinpoint-saved-segments',
+        JSON.stringify(updated)
+      );
+
+      setIsSaved(false);
       return;
     }
 
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem('pinpoint-saved-segments') || '[]'
-      ) as SearchResultItem[];
-
-      const alreadySaved = saved.some(
-        (item) => item.segment_id === selectedSegment.segment_id
-      );
-
-      if (alreadySaved) {
-        // 현재는 로컬 저장 취소만 처리
-        const updated = saved.filter(
-          (item) => item.segment_id !== selectedSegment.segment_id
-        );
-
-        localStorage.setItem(
-          'pinpoint-saved-segments',
-          JSON.stringify(updated)
-        );
-
-        setIsSaved(false);
-        return;
-      }
-
-      const apiBaseUrl =
-        import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-
+    // 이미 DB에 저장된 구간이면 중복 POST 요청을 보내지 않음
+    if (!existingFavorite) {
       const response = await fetch(
         `${apiBaseUrl}/api/users/me/favorites`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers,
           body: JSON.stringify({
             video_id: selectedSegment.video_id,
             start_time: selectedSegment.start_time,
@@ -383,25 +446,30 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       );
 
       if (!response.ok) {
-        if (response.status === 401) {
-          alert('로그인 정보가 만료되었습니다. 다시 로그인해주세요.');
-        } else {
-          alert('구간 저장에 실패했습니다.');
-        }
-        return;
+        throw new Error(`즐겨찾기 저장 실패: ${response.status}`);
       }
-
-      localStorage.setItem(
-        'pinpoint-saved-segments',
-        JSON.stringify([selectedSegment, ...saved])
-      );
-
-      setIsSaved(true);
-    } catch (error) {
-      console.error('구간 저장 중 오류:', error);
-      alert('구간 저장 중 오류가 발생했습니다.');
     }
-  };
+
+    const updated = [
+      selectedSegment,
+      ...saved.filter(
+        (item) => item.segment_id !== selectedSegment.segment_id
+      ),
+    ];
+
+    localStorage.setItem(
+      'pinpoint-saved-segments',
+      JSON.stringify(updated)
+    );
+
+    setIsSaved(true);
+  } catch (error) {
+    console.error('구간 저장 처리 오류:', error);
+    alert('구간 저장 처리 중 오류가 발생했습니다.');
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const togglePlay = () => {
     if (isYouTube) {
@@ -659,28 +727,28 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <div className="flex items-center gap-2 relative">
           <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium"
+            className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium"
           >
             <Share2 className="w-3.5 h-3.5" />
             공유
           </button>
 
-          <button
-            onClick={handleSaveSegment}
-            disabled={!selectedSegment}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium disabled:opacity-40 ${
-              isSaved
-                ? 'border-blue-600 bg-blue-50 text-blue-600'
-                : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-            }`}
-          >
-            <Bookmark
-              className={`w-3.5 h-3.5 ${
-                isSaved ? 'fill-blue-600' : ''
-              }`}
-            />
-            {isSaved ? '저장됨' : '저장'}
-          </button>
+<button
+  onClick={handleSaveSegment}
+  disabled={!selectedSegment || isSaving}
+  className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg border text-xs font-medium disabled:opacity-40 ${
+    isSaved
+      ? 'border-blue-600 bg-blue-50 text-blue-600'
+      : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+  }`}
+>
+  <Bookmark
+    className={`w-3.5 h-3.5 ${
+      isSaved ? 'fill-blue-600' : ''
+    }`}
+  />
+  {isSaving ? '저장 중...' : isSaved ? '저장됨' : '저장'}
+</button>
 
           {showShareToast && (
             <div className="absolute right-0 -top-8 bg-slate-900 text-white text-xs px-2.5 py-1 rounded shadow-md whitespace-nowrap">

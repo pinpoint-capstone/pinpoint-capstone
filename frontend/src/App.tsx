@@ -51,7 +51,17 @@ export default function App() {
 
   // 기존 Mock 영상 + 실제 YouTube 영상 정보 관리
   const [videosMap, setVideosMap] =
-    useState<Record<string, VideoMetadata>>(MOCK_VIDEOS);
+  useState<Record<string, VideoMetadata>>(() => {
+    try {
+      const saved = localStorage.getItem('pinpoint-video-metadata');
+
+      return saved
+        ? { ...MOCK_VIDEOS, ...JSON.parse(saved) }
+        : MOCK_VIDEOS;
+    } catch {
+      return MOCK_VIDEOS;
+    }
+  });
 
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
 
@@ -195,10 +205,19 @@ export default function App() {
         };
       }
 
-      setVideosMap((previous) => ({
-        ...previous,
-        ...youtubeVideos,
-      }));
+  setVideosMap((previous) => {
+  const updated = {
+    ...previous,
+    ...youtubeVideos,
+  };
+
+  localStorage.setItem(
+    'pinpoint-video-metadata',
+    JSON.stringify(updated)
+  );
+
+  return updated;
+});
 
       if (youtubeVideoIds.length === 0) {
         setIsLoading(false);
@@ -214,11 +233,19 @@ export default function App() {
 
         const { results, videos } = convertMultiSearchResults(response);
 
-        setVideosMap((previous) => ({
-          ...previous,
-          ...videos,
-        }));
+       setVideosMap((previous) => {
+  const updated = {
+    ...previous,
+    ...videos,
+  };
 
+  localStorage.setItem(
+    'pinpoint-video-metadata',
+    JSON.stringify(updated)
+  );
+
+  return updated;
+});
         setSearchResults(results);
 
         if (results.length > 0) {
@@ -500,7 +527,10 @@ export default function App() {
       )}
 
       {currentView === 'library' && (
-        <LibraryView onOpenSegment={handleOpenLibrarySegment} />
+        <LibraryView
+          onOpenSegment={handleOpenLibrarySegment}
+          videosMap={videosMap}
+        />
       )}
     </div>
   );
