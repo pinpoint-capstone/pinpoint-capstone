@@ -275,8 +275,11 @@ export default function App() {
             results[0];
 
           selectedSegmentRef.current = selectedItem;
-          setSelectedSegment(selectedItem);
-          setCurrentVideoId(selectedItem.video_id);
+setSelectedSegment(selectedItem);
+setCurrentVideoId(selectedItem.video_id);
+
+// 검색 후 자동으로 선택된 구간도 최근 본 기록에 저장
+saveRecentSegment(selectedItem);
         }
 
         // 초기 검색 로딩은 첫 응답이 오면 종료

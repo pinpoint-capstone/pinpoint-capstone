@@ -138,8 +138,8 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
       }
     ]
   },
-  '실험에서 용액을 옮기는 장면': {
-    query: '실험에서 용액을 옮기는 장면',
+  '피아노치는 장면': {
+    query: '피아노치는 장면',
     results: [
       {
         video_id: 'xyz789',
@@ -331,7 +331,7 @@ export const DEFAULT_SEARCH_RESPONSES: Record<string, SearchResponse> = {
 
 export const RECOMMENDED_QUERIES = [
   '에어팟 프로2 배터리를 설명하는 부분',
-  '피펫으로 용액을 옮기는 장면',
+  '피아노치는 장면',
   '선수가 골을 넣는 장면',
   '방을 꾸미는 장면'
 ];

@@ -74,18 +74,6 @@ export const Header: React.FC<HeaderProps> = ({
                 홈
               </button>
 
-              {/* 둘러보기 */}
-              <button
-                onClick={onNavigateBrowse}
-                className={`transition-colors relative py-1 cursor-pointer ${
-                  currentView === 'browse'
-                    ? "text-blue-600 font-semibold after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-600"
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                둘러보기
-              </button>
-
               {/* 내 라이브러리 */}
               <button
                 onClick={onNavigateLibrary}
