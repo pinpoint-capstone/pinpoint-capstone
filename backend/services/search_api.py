@@ -22,9 +22,6 @@ logger = logging.getLogger("uvicorn.error")
 
 YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
-# 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
-SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
-
 
 class SearchRequest(BaseModel):
     youtube_video_id: str
@@ -86,54 +83,80 @@ def _visual_search(video_id: str, feature_path: str, english_query: str, top_k: 
     )
 
 
-def predict_moments(video_id: str, feature_path: str, query: str, top_k: int = 5):
-    """구간 검색. 한국어 자막이 있으면 자막(MiniLM) 우선, 없으면 영상(Moment-DETR)으로 검색합니다.
-    자막 유사도가 SUBTITLE_MIN_SCORE보다 낮은 결과는 버리고, 남는 게 없으면 영상 검색으로 넘어갑니다."""
+def predict_moments(
+    video_id: str,
+    feature_path: str | None,
+    query: str,
+    top_k: int = 5
+):
+    """
+    한국어 자막이 있으면 Fine-tuned MiniLM으로 바로 검색합니다.
+    자막이 없을 때만 영어 번역 후 Moment-DETR visual fallback을 사용합니다.
+    """
     if indexer.USE_REAL_AI:
-        from ai.features.fusion_search import predict_moments_fusion
-
         subtitles, language = load_subtitles(video_id)
-        if language != "ko":
-            subtitles = []  # 한국어 자막이 아니면 영상 검색으로
 
-        with indexer._AI_LOCK:
-            english_query = to_english(query)
-            try:
+        # 1) 한국어 자막이 있으면 MiniLM 검색
+        if language == "ko" and subtitles:
+            from ai.features.fusion_search import predict_moments_fusion
+
+            with indexer._AI_LOCK:
                 raw = predict_moments_fusion(
                     video_id=video_id,
                     feature_path=feature_path,
                     subtitles=subtitles,
                     korean_query=query,
-                    english_query=english_query,
+                    english_query="",
                     video_duration=None,
-                    top_k=top_k * 3,  # 겹치는 구간을 거른 뒤 top_k개를 남기기 위해 넉넉히
+                    top_k=top_k * 3,
+                    model_type="finetuned",
                 )
-            except Exception as e:
-                # 모델 경로 설정 누락 등으로 자막 검색이 안 되면 영상 검색으로 대신합니다.
-                logger.warning("fusion 검색 실패, 영상 검색으로 대체합니다: %s", e)
-                raw = _visual_search(video_id, feature_path, english_query, top_k * 3)
 
-            # 자막 유사도가 너무 낮은 결과(관련 없는 문장)는 버립니다.
-            kept = [r for r in raw
-                    if r.get("source") != "subtitle" or _score_of(r) >= SUBTITLE_MIN_SCORE]
-            if not kept and raw:
-                logger.info("자막 유사도가 모두 %.2f 미만이라 영상 검색으로 대체합니다.",
-                            SUBTITLE_MIN_SCORE)
-                try:
-                    kept = _visual_search(video_id, feature_path, english_query, top_k * 3)
-                except Exception as e:
-                    logger.warning("영상 검색 대체도 실패: %s", e)
-            raw = kept
+            moments = [
+                {
+                    "start_time": r["start_time"],
+                    "end_time": r["end_time"],
+                    "score": _score_of(r),
+                    "source": r.get("source"),
+                }
+                for r in raw
+            ]
+
+            return _dedupe(moments, top_k)
+
+        # 2) 자막이 없을 때만 visual fallback
+        if not feature_path:
+            return []
+
+        english_query = to_english(query)
+
+        with indexer._AI_LOCK:
+            raw = _visual_search(
+                video_id,
+                feature_path,
+                english_query,
+                top_k * 3,
+            )
 
         moments = [
-            {"start_time": r["start_time"], "end_time": r["end_time"],
-             "score": _score_of(r), "source": r.get("source")}
+            {
+                "start_time": r["start_time"],
+                "end_time": r["end_time"],
+                "score": _score_of(r),
+                "source": r.get("source"),
+            }
             for r in raw
         ]
+
         return _dedupe(moments, top_k)
+
     return [
-        {"start_time": 10.0 + 15 * i, "end_time": 20.0 + 15 * i,
-         "score": round(0.9 - 0.1 * i, 2), "source": "stub"}
+        {
+            "start_time": 10.0 + 15 * i,
+            "end_time": 20.0 + 15 * i,
+            "score": round(0.9 - 0.1 * i, 2),
+            "source": "stub",
+        }
         for i in range(top_k)
     ]
 
@@ -248,8 +271,19 @@ def create_search_router(get_current_user) -> APIRouter:
                 "message": "영상을 분석 중입니다.",
             })
 
-        feature = indexer.resolve_path(r["feature_path"])
-        raw = predict_moments(yid, str(feature), query, top_k)
+        feature_path = r.get("feature_path")
+        feature = (
+            str(indexer.resolve_path(feature_path))
+            if feature_path
+            else None
+        )
+
+        raw = predict_moments(
+            yid,
+            feature,
+            query,
+            top_k,
+        )
         results = [_moment(yid, i, m) for i, m in enumerate(raw, start=1)]
 
         if user_id:
@@ -289,8 +323,19 @@ def create_search_router(get_current_user) -> APIRouter:
         for v in rows:
             yid = v["youtube_video_id"]
             try:
-                feature = indexer.resolve_path(v["feature_path"])
-                raw = predict_moments(yid, str(feature), query, top_k)
+                feature_path = v.get("feature_path")
+                feature = (
+                    str(indexer.resolve_path(feature_path))
+                    if feature_path
+                    else None
+                )
+
+                raw = predict_moments(
+                    yid,
+                    feature,
+                    query,
+                    top_k,
+                )
             except Exception:
                 continue  # 한 영상이 실패해도 나머지는 계속
             moments = [_moment(yid, i, m) for i, m in enumerate(raw, start=1)]

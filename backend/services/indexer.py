@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -8,10 +9,10 @@ from supabase import create_client
 
 try:
     from .acquire import download_video
-    from .subtitles import transcribe_video
+    from .subtitles import transcribe_video, load_subtitles
 except ImportError:
     from acquire import download_video
-    from subtitles import transcribe_video
+    from subtitles import transcribe_video, load_subtitles
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
@@ -78,6 +79,16 @@ def _feature_ready(feat) -> bool:
     if not _usable(feat):
         return False
     return resolve_path(feat["feature_path"]).exists() if USE_REAL_AI else True
+
+
+
+def _subtitle_ready(youtube_video_id: str) -> bool:
+    """한국어 자막이 실제 검색 가능한 상태인지 확인합니다."""
+    try:
+        subtitles, language = load_subtitles(youtube_video_id)
+        return language == "ko" and bool(subtitles)
+    except Exception:
+        return False
 
 
 def get_video(youtube_video_id: str) -> dict | None:
@@ -147,18 +158,21 @@ def claim(video_id: str) -> bool:
 
 
 def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[dict]:
-    """분석 완료된 유튜브 영상 목록 (feature 경로 포함)."""
+    """분석 완료된 유튜브 영상 목록. 자막 또는 visual feature 중 하나만 있어도 사용 가능."""
     q = (
         supabase.table("videos")
         .select("*")
         .eq("status", "INDEXED")
         .eq("source_type", "youtube")
     )
+
     if youtube_ids:
         q = q.in_("youtube_video_id", youtube_ids)
+
     rows = q.order("last_used_at", desc=True).limit(limit).execute().data
     if not rows:
         return []
+
     feats = (
         supabase.table("video_features")
         .select("video_id, feature_path, model_version, id")
@@ -167,9 +181,26 @@ def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[
         .execute()
         .data
     )
-    fmap = {f["video_id"]: f["feature_path"] for f in feats if _feature_ready(f)}
-    return [{**r, "feature_path": fmap[r["video_id"]]} for r in rows if r["video_id"] in fmap]
 
+    fmap = {
+        f["video_id"]: f["feature_path"]
+        for f in feats
+        if _feature_ready(f)
+    }
+
+    result = []
+
+    for row in rows:
+        yid = row["youtube_video_id"]
+        feature_path = fmap.get(row["video_id"])
+
+        if _subtitle_ready(yid) or feature_path:
+            result.append({
+                **row,
+                "feature_path": feature_path,
+            })
+
+    return result
 
 def check_status(youtube_video_id: str) -> dict | None:
     row = get_video(youtube_video_id)
@@ -188,57 +219,156 @@ def check_status(youtube_video_id: str) -> dict | None:
 
 
 def prepare(youtube_video_id: str, title: str, **meta) -> dict:
-    """state: READY(바로 검색 가능) / STARTED(분석을 시작해야 함) / PROCESSING(이미 분석 중)"""
+    """
+    READY: 한국어 자막 또는 visual feature 중 하나가 검색 가능한 상태
+    STARTED: 새 분석 시작
+    PROCESSING: 이미 분석 중
+    """
     row = register_video(youtube_video_id, title, **meta)
     vid = row["video_id"]
     feat = get_feature(vid)
 
-    if row["status"] == "INDEXED" and _feature_ready(feat):
-        supabase.table("videos").update({"last_used_at": _now()}).eq("video_id", vid).execute()
-        return {"state": "READY", "video_id": vid, "feature_path": feat["feature_path"]}
+    subtitle_ready = _subtitle_ready(youtube_video_id)
+    feature_ready = _feature_ready(feat)
+
+    if row["status"] == "INDEXED" and (subtitle_ready or feature_ready):
+        supabase.table("videos").update({
+            "last_used_at": _now()
+        }).eq("video_id", vid).execute()
+
+        return {
+            "state": "READY",
+            "video_id": vid,
+            "feature_path": feat["feature_path"] if feature_ready else None,
+        }
 
     if row["status"] == "PROCESSING":
         if not reclaim_stale(vid):
-            return {"state": "PROCESSING", "video_id": vid}
+            return {
+                "state": "PROCESSING",
+                "video_id": vid
+            }
 
-    if row["status"] == "INDEXED":  # INDEXED인데 feature가 없는 비정상 상태
+    if row["status"] == "INDEXED":
         set_status(vid, "PENDING")
 
     if claim(vid):
-        return {"state": "STARTED", "video_id": vid}
-    return {"state": "PROCESSING", "video_id": vid}
+        return {
+            "state": "STARTED",
+            "video_id": vid
+        }
+
+    return {
+        "state": "PROCESSING",
+        "video_id": vid
+    }
 
 
 def run_indexing(video_id: str, youtube_video_id: str) -> None:
-    """다운로드 → feature 생성 → 자막 생성 → 저장 → mp4 삭제. 오래 걸려서 백그라운드로 실행합니다."""
+    """
+    다운로드 → Whisper 자막 생성 → 자막이 없을 때만 visual feature 생성 → 저장.
+    Subtitle-first 구조에 맞춘 분석 파이프라인.
+    """
     video_path = None
+
     try:
-        video_path = download_video(youtube_video_id, out_dir=str(RAW_DIR))
-        feature_path = _to_stored_path(build_feature(str(video_path), youtube_video_id))
+        total_start = time.perf_counter()
 
+        t = time.perf_counter()
+        video_path = download_video(
+            youtube_video_id,
+            out_dir=str(RAW_DIR)
+        )
+        print(
+            f"[timing] download {youtube_video_id}: "
+            f"{time.perf_counter() - t:.2f}s"
+        )
+
+        feature_path = None
+        subtitles_available = False
+
+        # 1) 자막을 먼저 생성
         if USE_REAL_AI:
-            # 자막 생성이 실패해도 영상(visual) 검색은 가능하므로 분석 전체를 실패로 두지 않습니다.
             try:
-                with _AI_LOCK:
-                    transcribe_video(str(video_path), youtube_video_id)
-            except Exception as e:
-                print(f"[subtitles] 자막 생성 실패 ({youtube_video_id}): {e}")
+                t = time.perf_counter()
 
-        supabase.table("video_features").delete().eq("video_id", video_id).execute()
-        supabase.table("video_features").insert({
-            "video_id": video_id,
-            "feature_path": feature_path,
-            "model_version": MODEL_VERSION,
-        }).execute()
-        supabase.table("videos").update(
-            {"status": "INDEXED", "error_message": None, "last_used_at": _now()}
-        ).eq("video_id", video_id).execute()
+                with _AI_LOCK:
+                    transcribe_video(
+                        str(video_path),
+                        youtube_video_id
+                    )
+
+                print(
+                    f"[timing] whisper {youtube_video_id}: "
+                    f"{time.perf_counter() - t:.2f}s"
+                )
+
+                # 생성된 자막이 실제 검색 가능한지 확인
+                try:
+                    from .subtitles import load_subtitles
+                except ImportError:
+                    from subtitles import load_subtitles
+
+                subtitles, language = load_subtitles(youtube_video_id)
+
+                if language == "ko" and subtitles:
+                    subtitles_available = True
+
+            except Exception as e:
+                print(
+                    f"[subtitles] 자막 생성 실패 "
+                    f"({youtube_video_id}): {e}"
+                )
+
+        # 2) 한국어 자막이 없을 때만 Moment-DETR feature 생성
+        if not subtitles_available:
+            t = time.perf_counter()
+
+            feature_path = _to_stored_path(
+                build_feature(
+                    str(video_path),
+                    youtube_video_id
+                )
+            )
+
+            print(
+                f"[timing] visual feature {youtube_video_id}: "
+                f"{time.perf_counter() - t:.2f}s"
+            )
+
+            supabase.table("video_features").delete() \
+                .eq("video_id", video_id).execute()
+
+            supabase.table("video_features").insert({
+                "video_id": video_id,
+                "feature_path": feature_path,
+                "model_version": MODEL_VERSION,
+            }).execute()
+
+        # 3) 분석 완료
+        supabase.table("videos").update({
+            "status": "INDEXED",
+            "error_message": None,
+            "last_used_at": _now(),
+        }).eq("video_id", video_id).execute()
+
+        print(
+            f"[timing] TOTAL {youtube_video_id}: "
+            f"{time.perf_counter() - total_start:.2f}s | "
+            f"subtitle_ready={subtitles_available} | "
+            f"visual_feature_generated={feature_path is not None}"
+        )
+
     except Exception as e:
-        set_status(video_id, "FAILED", str(e)[:500])
+        set_status(
+            video_id,
+            "FAILED",
+            str(e)[:500]
+        )
+
     finally:
         if video_path and Path(video_path).exists():
             Path(video_path).unlink()
-
 
 def backfill_subtitles(youtube_video_id: str) -> str:
     """이미 분석된 영상의 자막만 새로 만듭니다. (feature는 건드리지 않음)"""
