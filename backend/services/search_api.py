@@ -38,6 +38,29 @@ _SUBTITLE_SEARCH_LOCK = threading.Lock()
 # 동시에 들어온 요청들이 각자 "아직 여유 있다"고 판단해 한꺼번에 분석을 시작하지 않도록,
 # 분석 시작 여부를 확인하고 시작하는 과정을 한 번에 하나씩만 하게 합니다.
 _START_LOCK = threading.Lock()
+# YouTube가 다운로드를 막아 분석할 수 없는 영상의 에러 문구. 이런 영상은 목록에서 숨깁니다.
+# (서버 파일이 없어서 난 에러 등 다른 실패는 숨기지 않습니다)
+BLOCKED_ERR_RE = re.compile(
+    r"403|Forbidden|not a bot|Sign in to confirm|제한|Private video|Video unavailable", re.I)
+
+
+def _is_blocked(row: dict | None) -> bool:
+    return bool(row and row.get("status") == "FAILED"
+                and BLOCKED_ERR_RE.search(row.get("error_message") or ""))
+
+
+def _blocked_ids(ids: list[str]) -> set[str]:
+    """DB에 '다운로드 막힘'으로 기록된 영상 ID. 확인이 안 되면 아무것도 숨기지 않습니다."""
+    if not ids:
+        return set()
+    try:
+        res = (indexer.supabase.table("videos")
+               .select("youtube_video_id,status,error_message")
+               .in_("youtube_video_id", ids).eq("status", "FAILED").execute())
+    except Exception as e:
+        logger.warning("막힌 영상 확인 실패: %s", e)
+        return set()
+    return {r["youtube_video_id"] for r in (res.data or []) if _is_blocked(r)}
 
 class SearchRequest(BaseModel):
     youtube_video_id: str
@@ -263,6 +286,9 @@ def create_search_router(get_current_user) -> APIRouter:
             )
         except requests.HTTPError as e:
             return _youtube_error(e)
+        blocked = _blocked_ids([i["youtube_video_id"] for i in items])
+        if blocked:
+            items = [i for i in items if i["youtube_video_id"] not in blocked]
         return {"items": items, "next_page_token": next_token}
 
     @router.get("/api/videos/youtube/{youtube_video_id}/status")
@@ -404,12 +430,14 @@ def create_search_router(get_current_user) -> APIRouter:
                 # 분석은 한 번에 하나씩 처리되므로, 이미 대기 중인 영상이 많으면 새로 시작하지 않습니다.
                 try:
                     budget = min(budget, max(0, MAX_INFLIGHT_ANALYSES - indexer.count_processing()))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("분석 중인 영상 수 확인 실패: %s", e)
             for yid in ids:
                 if yid in done:
                     continue
                 row = indexer.get_video(yid)
+                if _is_blocked(row):
+                    continue  # YouTube가 다운로드를 막은 영상은 목록에서 뺍니다
                 status = row["status"] if row else "NOT_ANALYZED"
                 if status == "PROCESSING" and indexer.reclaim_stale(row["video_id"]):
                     status = "PENDING"  # 서버가 꺼져서 멈춘 분석은 다시 시작할 수 있게 되돌림
@@ -420,7 +448,8 @@ def create_search_router(get_current_user) -> APIRouter:
                     with _START_LOCK:
                         try:
                             has_room = indexer.count_processing() < MAX_INFLIGHT_ANALYSES
-                        except Exception:
+                        except Exception as e:
+                            logger.warning("분석 중인 영상 수 확인 실패: %s", e)
                             has_room = False  # 확인이 안 되면 새로 시작하지 않음
                         if has_room:
                             new_status, started = _try_start_analysis(yid, row, background_tasks)
