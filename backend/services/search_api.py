@@ -22,6 +22,8 @@ logger = logging.getLogger("uvicorn.error")
 
 YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
+# 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
+SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
 
 class SearchRequest(BaseModel):
     youtube_video_id: str
@@ -100,29 +102,39 @@ def predict_moments(
         if language == "ko" and subtitles:
             from ai.features.fusion_search import predict_moments_fusion
 
-            with indexer._AI_LOCK:
-                raw = predict_moments_fusion(
-                    video_id=video_id,
-                    feature_path=feature_path,
-                    subtitles=subtitles,
-                    korean_query=query,
-                    english_query="",
-                    video_duration=None,
-                    top_k=top_k * 3,
-                    model_type="finetuned",
-                )
+            raw = None
+            try:
+                with indexer._AI_LOCK:
+                    raw = predict_moments_fusion(
+                        video_id=video_id,
+                        feature_path=feature_path,
+                        subtitles=subtitles,
+                        korean_query=query,
+                        english_query="",
+                        video_duration=None,
+                        top_k=top_k * 3,
+                        model_type="finetuned",
+                    )
+            except Exception as e:
+                # 모델 경로 설정 누락 등으로 자막 검색이 안 되면 영상 검색으로 대신합니다.
+                logger.warning("자막 검색 실패: %s", e)
 
-            moments = [
-                {
-                    "start_time": r["start_time"],
-                    "end_time": r["end_time"],
-                    "score": _score_of(r),
-                    "source": r.get("source"),
-                }
-                for r in raw
-            ]
-
-            return _dedupe(moments, top_k)
+            if raw is not None:
+                # 자막 유사도가 너무 낮은(관련 없는) 결과는 버립니다.
+                raw = [r for r in raw
+                       if r.get("source") != "subtitle" or _score_of(r) >= SUBTITLE_MIN_SCORE]
+                if raw:
+                    moments = [
+                        {
+                            "start_time": r["start_time"],
+                            "end_time": r["end_time"],
+                            "score": _score_of(r),
+                            "source": r.get("source"),
+                        }
+                        for r in raw
+                    ]
+                    return _dedupe(moments, top_k)
+            # 자막 결과가 없으면, 영상 feature가 있을 때만 아래 영상 검색으로 이어갑니다.
 
         # 2) 자막이 없을 때만 visual fallback
         if not feature_path:
@@ -130,13 +142,17 @@ def predict_moments(
 
         english_query = to_english(query)
 
-        with indexer._AI_LOCK:
-            raw = _visual_search(
-                video_id,
-                feature_path,
-                english_query,
-                top_k * 3,
-            )
+        try:
+            with indexer._AI_LOCK:
+                raw = _visual_search(
+                    video_id,
+                    feature_path,
+                    english_query,
+                    top_k * 3,
+                )
+        except Exception as e:
+            logger.warning("영상 검색 실패: %s", e)
+            return []
 
         moments = [
             {
