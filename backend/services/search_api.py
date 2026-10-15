@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import threading
 
 import requests
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
@@ -27,9 +28,13 @@ MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
 SUBTITLE_PAD_BEFORE = float(os.getenv("SUBTITLE_PAD_BEFORE", "2.0"))
 SUBTITLE_MIN_LEN = float(os.getenv("SUBTITLE_MIN_LEN", "6.0"))
 PAGE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{1,200}$")
+MAX_INFLIGHT_ANALYSES = int(os.getenv("MAX_INFLIGHT_ANALYSES", "4"))  # 동시에 분석 대기시킬 최대 영상 수
 MAX_MULTI_VIDEOS = 30  # /api/search/multi 한 번에 다룰 최대 영상 수
 # 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
 SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
+# 자막 검색(MiniLM)은 가벼워서 영상 분석(Whisper)과 자물쇠를 따로 씁니다.
+# 분석이 도는 동안에도 검색이 기다리지 않게 하려는 것입니다.
+_SUBTITLE_SEARCH_LOCK = threading.Lock()
 
 class SearchRequest(BaseModel):
     youtube_video_id: str
@@ -122,7 +127,7 @@ def predict_moments(
 
             raw = None
             try:
-                with indexer._AI_LOCK:
+                with _SUBTITLE_SEARCH_LOCK:
                     raw = predict_moments_fusion(
                         video_id=video_id,
                         feature_path=feature_path,
@@ -392,11 +397,19 @@ def create_search_router(get_current_user) -> APIRouter:
         if ids:
             done = {v["video"]["youtube_video_id"] for v in videos}
             budget = min(max(body.max_new_analyses, 0), 5) if body.auto_analyze else 0
+            if budget > 0:
+                # 분석은 한 번에 하나씩 처리되므로, 이미 대기 중인 영상이 많으면 새로 시작하지 않습니다.
+                try:
+                    budget = min(budget, max(0, MAX_INFLIGHT_ANALYSES - indexer.count_processing()))
+                except Exception:
+                    pass
             for yid in ids:
                 if yid in done:
                     continue
                 row = indexer.get_video(yid)
                 status = row["status"] if row else "NOT_ANALYZED"
+                if status == "PROCESSING" and indexer.reclaim_stale(row["video_id"]):
+                    status = "PENDING"  # 서버가 꺼져서 멈춘 분석은 다시 시작할 수 있게 되돌림
                 if status == "INDEXED":
                     status = "PENDING"  # 분석은 됐지만 이 컴퓨터에 feature 파일이 없어 다시 분석이 필요함
                 # FAILED는 자동 재시도하지 않음 (사용자가 클릭하면 POST /api/search로 재시도)
@@ -406,7 +419,12 @@ def create_search_router(get_current_user) -> APIRouter:
                         status = new_status
                     if started:
                         budget -= 1
-                pending.append({"youtube_video_id": yid, "status": status})
+                item = {"youtube_video_id": yid, "status": status}
+                if row:  # 목록에 썸네일/제목을 바로 보여줄 수 있게 함
+                    item["title"] = row.get("title")
+                    item["channel_name"] = row.get("channel_name")
+                    item["thumbnail_url"] = row.get("thumbnail_url")
+                pending.append(item)
 
         if user_id:
             try:
