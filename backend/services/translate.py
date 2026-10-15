@@ -6,31 +6,46 @@
 import logging
 import os
 import re
-from functools import lru_cache
+import threading
 
 logger = logging.getLogger("uvicorn.error")
 
 MODEL_NAME = os.getenv("TRANSLATE_MODEL", "Helsinki-NLP/opus-mt-ko-en")
 HANGUL_RE = re.compile(r"[가-힣ㄱ-ㅎㅏ-ㅣ]")
 
+# 모델 로딩은 한 번에 하나만 합니다. (서버 시작 직후 워밍업과 첫 검색이 동시에 로딩하면
+# "Cannot copy out of meta tensor" 오류가 날 수 있습니다.)
+_LOAD_LOCK = threading.Lock()
+_model_cache = None
+_translations: dict[str, str] = {}  # 성공한 번역만 저장합니다 (실패는 저장하지 않음)
 
-@lru_cache(maxsize=1)
+
 def _load():
-    import torch
-    from transformers import MarianMTModel, MarianTokenizer
+    global _model_cache
+    with _LOAD_LOCK:
+        if _model_cache is None:
+            import torch
+            from transformers import MarianMTModel, MarianTokenizer
 
-    tokenizer = MarianTokenizer.from_pretrained(MODEL_NAME)
-    model = MarianMTModel.from_pretrained(MODEL_NAME)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device).eval()
-    return tokenizer, model, device
+            tokenizer = MarianTokenizer.from_pretrained(MODEL_NAME)
+            try:
+                model = MarianMTModel.from_pretrained(MODEL_NAME)
+                model.to("cpu")  # meta 텐서가 남아 있으면 여기서 바로 오류가 납니다
+            except Exception as e:
+                logger.warning("번역 모델 기본 로딩 실패, 다른 방식으로 다시 시도합니다: %s", e)
+                model = MarianMTModel.from_pretrained(MODEL_NAME, low_cpu_mem_usage=False)
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            model.to(device).eval()
+            _model_cache = (tokenizer, model, device)
+        return _model_cache
 
 
-@lru_cache(maxsize=256)
 def to_english(query: str) -> str:
     q = query.strip()
     if not q or not HANGUL_RE.search(q):
         return q  # 이미 영어(한글 없음)면 그대로
+    if q in _translations:
+        return _translations[q]
 
     try:
         import torch
@@ -42,7 +57,12 @@ def to_english(query: str) -> str:
         with torch.no_grad():
             out = model.generate(**batch, max_length=64, num_beams=4)
         text = tokenizer.decode(out[0], skip_special_tokens=True).strip()
-        return text or q
+        if text:
+            if len(_translations) > 256:
+                _translations.clear()
+            _translations[q] = text
+            return text
+        return q
     except Exception as e:
         logger.warning("검색어 번역 실패, 원문을 사용합니다: %s", e)
         return q
