@@ -28,8 +28,6 @@ SUBTITLE_PAD_BEFORE = float(os.getenv("SUBTITLE_PAD_BEFORE", "2.0"))
 SUBTITLE_MIN_LEN = float(os.getenv("SUBTITLE_MIN_LEN", "6.0"))
 PAGE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{1,200}$")
 MAX_MULTI_VIDEOS = 30  # /api/search/multi 한 번에 다룰 최대 영상 수
-# 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
-SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
 
 class SearchRequest(BaseModel):
     youtube_video_id: str
@@ -137,21 +135,17 @@ def predict_moments(
                 # 모델 경로 설정 누락 등으로 자막 검색이 안 되면 영상 검색으로 대신합니다.
                 logger.warning("자막 검색 실패: %s", e)
 
-            if raw is not None:
-                # 자막 유사도가 너무 낮은(관련 없는) 결과는 버립니다.
-                raw = [r for r in raw
-                       if r.get("source") != "subtitle" or _score_of(r) >= SUBTITLE_MIN_SCORE]
-                if raw:
-                    moments = [
-                        {
-                            "start_time": r["start_time"],
-                            "end_time": r["end_time"],
-                            "score": _score_of(r),
-                            "source": r.get("source"),
-                        }
-                        for r in raw
-                    ]
-                    return _dedupe(_widen_subtitle(moments), top_k)
+            if raw:
+                moments = [
+                    {
+                        "start_time": r["start_time"],
+                        "end_time": r["end_time"],
+                        "score": _score_of(r),
+                        "source": r.get("source"),
+                    }
+                    for r in raw
+                ]
+                return _dedupe(_widen_subtitle(moments), top_k)
             # 자막 결과가 없으면, 영상 feature가 있을 때만 아래 영상 검색으로 이어갑니다.
 
         # 2) 자막이 없을 때만 visual fallback
@@ -426,8 +420,18 @@ def warmup_ai() -> None:
     try:
         rows = indexer.list_indexed(limit=1)
         if rows:
-            feature = indexer.resolve_path(rows[0]["feature_path"])
-            predict_moments(rows[0]["youtube_video_id"], str(feature), "warm up", 1)
+            feature_path = rows[0].get("feature_path")
+            feature = (
+                str(indexer.resolve_path(feature_path))
+                if feature_path
+                else None
+            )
+            predict_moments(
+                rows[0]["youtube_video_id"],
+                feature,
+                "warm up",
+                1,
+            )
     except Exception:
         pass
     try:
