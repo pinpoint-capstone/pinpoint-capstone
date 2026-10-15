@@ -214,57 +214,72 @@ def predict_moments_fusion(
     video_id, feature_path, subtitles,
     korean_query, english_query,
     video_duration, subtitle_json_path=None, top_k=5,
-    model_type="base"
-):
-    visual = [
-        dict(r, source="hybrid", hybrid_source=r.get("source"))
-        for r in predict_moments_hybrid(
-            video_id=video_id,
-            video_feature_path=feature_path,
-            query=english_query,
-            subtitle_json_path=subtitle_json_path,
-            video_duration=video_duration,
-            top_k=top_k
-        )
-    ]
 
-    # 다국어 의미 검색: 한국어·영어 검색어 모두 사용
-    subtitle = []
+    model_type="finetuned"
+):
+    """
+    Korean subtitle-first search.
+
+    1. 한국어 자막이 존재하면 Fine-tuned MiniLM으로 자막 의미 검색
+    2. 자막 검색 결과가 있으면 해당 후보들을 반환
+    3. 자막이 없거나 검색할 수 없는 경우에만 Moment-DETR visual fallback
+    """
+
+    # 1) Subtitle-first
     if subtitles:
-        subtitle = get_multilingual_subtitle_candidates(
-            korean_query=korean_query,
-            english_query=english_query,
+        subtitle_candidates = get_semantic_subtitle_candidates(
+            query=korean_query,
             subtitles=subtitles,
             model=get_semantic_model(model_type=model_type),
-            top_k=top_k
+            top_k=top_k,
         )
 
-    ko = [r for r in subtitle if r["language"] == "ko"]
-    en = [r for r in subtitle if r["language"] == "en"]
+        if subtitle_candidates:
+            results = []
 
-    # 첫 후보부터 세 검색 방식의 순서를 번갈아 사용
-    ordered = []
-    for i in range(max(len(visual), len(ko), len(en))):
-        for group in (visual, ko, en):
-            if i < len(group):
-                ordered.append(group[i])
+            for candidate in subtitle_candidates:
+                candidate = {
+                    **candidate,
+                    "source": "subtitle",
+                    "language": "ko",
+                }
 
-    selected = []
+                results.append(
+                    make_fusion_result(
+                        video_id=video_id,
+                        query=korean_query,
+                        candidate=candidate,
+                    )
+                )
 
-    for candidate in ordered:
-        # 실험: IoU 기준으로만 중복 후보 제거
-        duplicate = any(
-            temporal_iou(candidate, kept) >= 0.5
-            for kept in selected
+            return results
+
+    # 2) Visual fallback
+    visual_candidates = predict_moments_hybrid(
+        video_id=video_id,
+        video_feature_path=feature_path,
+        query=english_query,
+        subtitle_json_path=None,
+        video_duration=video_duration,
+        top_k=top_k,
+    )
+
+    results = []
+
+    for candidate in visual_candidates:
+        candidate = {
+            **candidate,
+            "source": "visual",
+            "hybrid_source": candidate.get("source"),
+        }
+
+        results.append(
+            make_fusion_result(
+                video_id=video_id,
+                query=korean_query,
+                candidate=candidate,
+            )
         )
 
-        if not duplicate:
-            selected.append(candidate)
+    return results
 
-        if len(selected) >= top_k:
-            break
-
-    return [
-        make_fusion_result(video_id, korean_query, r)
-        for r in selected
-    ]
