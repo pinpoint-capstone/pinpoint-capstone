@@ -19,11 +19,26 @@ RAW_DIR = ROOT / "data" / "raw"
 FEATURE_DIR = ROOT / "data" / "features"
 
 load_dotenv(ROOT / "backend" / ".env")
-USE_REAL_AI = os.getenv("USE_REAL_AI", "0") == "1"
+USE_REAL_AI = os.getenv("USE_REAL_AI", "0").strip().lower() in ("1", "true", "yes", "on")
+print("[indexer] USE_REAL_AI =", USE_REAL_AI, "(False면 가짜 결과로 동작합니다)")
 MODEL_VERSION = "moment-detr-clip" if USE_REAL_AI else "stub"
 _AI_LOCK = threading.Lock()  # GPU를 한 번에 하나만 쓰게 함
 
 supabase = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+
+
+def _retry(fn, tries: int = 3, delay: float = 0.6):
+    """Supabase 연결이 잠깐 끊겼을 때(Server disconnected 등) 몇 번 다시 시도합니다."""
+    for i in range(tries):
+        try:
+            return fn()
+        except Exception as e:
+            transient = any(k in type(e).__name__ + str(e) for k in
+                            ("Disconnected", "RemoteProtocol", "ReadError", "ConnectError",
+                             "Timeout", "ConnectionTerminated", "ReadTimeout"))
+            if not transient or i == tries - 1:
+                raise
+            time.sleep(delay * (i + 1))
 
 
 def _usable(feat) -> bool:
@@ -92,25 +107,25 @@ def _subtitle_ready(youtube_video_id: str) -> bool:
 
 
 def get_video(youtube_video_id: str) -> dict | None:
-    res = (
+    res = _retry(lambda: (
         supabase.table("videos")
         .select("*")
         .eq("youtube_video_id", youtube_video_id)
         .limit(1)
         .execute()
-    )
+    ))
     return res.data[0] if res.data else None
 
 
 def get_feature(video_id: str) -> dict | None:
-    res = (
+    res = _retry(lambda: (
         supabase.table("video_features")
         .select("*")
         .eq("video_id", video_id)
         .order("id", desc=True)
         .limit(1)
         .execute()
-    )
+    ))
     return res.data[0] if res.data else None
 
 
@@ -169,18 +184,17 @@ def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[
     if youtube_ids:
         q = q.in_("youtube_video_id", youtube_ids)
 
-    rows = q.order("last_used_at", desc=True).limit(limit).execute().data
+    rows = _retry(lambda: q.order("last_used_at", desc=True).limit(limit).execute()).data
     if not rows:
         return []
 
-    feats = (
+    feats = _retry(lambda: (
         supabase.table("video_features")
         .select("video_id, feature_path, model_version, id")
         .in_("video_id", [r["video_id"] for r in rows])
         .order("id")
         .execute()
-        .data
-    )
+    )).data
 
     fmap = {
         f["video_id"]: f["feature_path"]
