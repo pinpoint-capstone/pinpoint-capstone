@@ -214,6 +214,7 @@ def predict_moments_fusion(
     video_id, feature_path, subtitles,
     korean_query, english_query,
     video_duration, subtitle_json_path=None, top_k=5,
+
     model_type="finetuned"
 ):
     """
@@ -281,3 +282,4 @@ def predict_moments_fusion(
         )
 
     return results
+

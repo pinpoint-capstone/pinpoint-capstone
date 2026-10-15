@@ -1,0 +1,77 @@
+{
+  "name": "쌀 씻기",
+  "video_id": "kr_kitchen_001",
+  "query_ko": "쌀을 씻는 장면",
+  "query_en": "washing rice",
+  "video_duration": 37.08,
+  "visual_model": "Moment-DETR",
+  "subtitle_model": "Fine-tuned MiniLM",
+  "candidate_top_k": 3,
+  "actual_candidate_counts": {
+    "visual": 2,
+    "ko": 3,
+    "en": 3
+  },
+  "visual": [
+    {
+      "video_id": "kr_kitchen_001",
+      "query": "washing rice",
+      "start_time": 20.8946,
+      "end_time": 36.4261,
+      "score": 0.9413
+    },
+    {
+      "video_id": "kr_kitchen_001",
+      "query": "washing rice",
+      "start_time": 7.9944,
+      "end_time": 14.4361,
+      "score": 0.0024
+    }
+  ],
+  "ko": [
+    {
+      "start_time": 29.28,
+      "end_time": 31.72,
+      "text": "세번째, 이런 물구멍이 있어서 쌀 씻으면",
+      "score": 0.7528,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 29.28,
+      "end_time": 33.52,
+      "text": "세번째, 이런 물구멍이 있어서 쌀 씻으면 한 톨도 흘리지 않고 과일 씻어서",
+      "score": 0.6392,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 26.56,
+      "end_time": 31.72,
+      "text": "중국제품 아니고 메이드인 코리아라 더 맘에 들어요 세번째, 이런 물구멍이 있어서 쌀 씻으면",
+      "score": 0.6289,
+      "source": "subtitle"
+    }
+  ],
+  "en": [
+    {
+      "start_time": 29.28,
+      "end_time": 31.72,
+      "text": "세번째, 이런 물구멍이 있어서 쌀 씻으면",
+      "score": 0.7476,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 29.28,
+      "end_time": 33.52,
+      "text": "세번째, 이런 물구멍이 있어서 쌀 씻으면 한 톨도 흘리지 않고 과일 씻어서",
+      "score": 0.6461,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 29.28,
+      "end_time": 34.8,
+      "text": "세번째, 이런 물구멍이 있어서 쌀 씻으면 한 톨도 흘리지 않고 과일 씻어서 물 바로 버리기도 좋아요",
+      "score": 0.6287,
+      "source": "subtitle"
+    }
+  ]
+}

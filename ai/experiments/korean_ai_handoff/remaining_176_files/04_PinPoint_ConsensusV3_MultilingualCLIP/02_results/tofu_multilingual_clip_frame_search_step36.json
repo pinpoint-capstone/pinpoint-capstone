@@ -1,0 +1,48 @@
+{
+  "experiment": "Multilingual CLIP frame-level pilot",
+  "model": "sentence-transformers/clip-ViT-B-32-multilingual-v1",
+  "video_id": "kr_tofu_001",
+  "query_ko": "두부를 칼로 자르는 장면",
+  "video_feature_shape": [
+    83,
+    512
+  ],
+  "text_embedding_shape": [
+    1,
+    512
+  ],
+  "time_step_seconds": 2.0,
+  "note": "Frame-level cosine similarity pilot. Approximate times are feature indices multiplied by 2 seconds. Not Moment-DETR predictions or temporal IoU evaluation.",
+  "top_frames": [
+    {
+      "rank": 1,
+      "feature_index": 8,
+      "approx_time_seconds": 16.0,
+      "cosine_similarity": 0.24769984185695648
+    },
+    {
+      "rank": 2,
+      "feature_index": 67,
+      "approx_time_seconds": 134.0,
+      "cosine_similarity": 0.24538849294185638
+    },
+    {
+      "rank": 3,
+      "feature_index": 10,
+      "approx_time_seconds": 20.0,
+      "cosine_similarity": 0.24463984370231628
+    },
+    {
+      "rank": 4,
+      "feature_index": 31,
+      "approx_time_seconds": 62.0,
+      "cosine_similarity": 0.24375687539577484
+    },
+    {
+      "rank": 5,
+      "feature_index": 48,
+      "approx_time_seconds": 96.0,
+      "cosine_similarity": 0.24346846342086792
+    }
+  ]
+}

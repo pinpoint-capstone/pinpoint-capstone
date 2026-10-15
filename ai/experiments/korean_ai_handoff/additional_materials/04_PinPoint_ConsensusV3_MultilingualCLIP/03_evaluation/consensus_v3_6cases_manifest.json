@@ -1,0 +1,98 @@
+{
+  "experiment": "Consensus V1 V2 V3 comparison",
+  "case_count": 6,
+  "candidate_sources": [
+    "Moment-DETR visual",
+    "Fine-tuned MiniLM KO",
+    "Fine-tuned MiniLM EN"
+  ],
+  "video_info": {
+    "kr_tofu_001": {
+      "duration": 164.98,
+      "feature": "kr_tofu_001_clip_features.pt",
+      "subtitle": "kr_tofu_001_subtitles.json"
+    },
+    "kr_kitchen_001": {
+      "duration": 37.08,
+      "feature": "kr_kitchen_001_clip_features.pt",
+      "subtitle": "kr_kitchen_001_subtitles.json"
+    },
+    "kr_daiso_001": {
+      "duration": 32.08,
+      "feature": "kr_daiso_001_clip_features.pt",
+      "subtitle": "kr_daiso_001_subtitles.json"
+    }
+  },
+  "cases": [
+    {
+      "name": "두부 자르기",
+      "video_id": "kr_tofu_001",
+      "query_ko": "두부를 칼로 자르는 장면",
+      "query_en": "cutting tofu with a knife",
+      "ground_truth": {
+        "start_time": 12.0,
+        "end_time": 23.0
+      }
+    },
+    {
+      "name": "두부 양념 준비",
+      "video_id": "kr_tofu_001",
+      "query_ko": "두부 양념을 준비하는 장면",
+      "query_en": "preparing seasoning sauce for tofu",
+      "ground_truth": {
+        "video_id": "kr_tofu_001",
+        "query_ko": "두부 양념을 준비하는 장면",
+        "query_en": "preparing seasoning sauce for tofu",
+        "start_time": 95.0,
+        "end_time": 135.0
+      }
+    },
+    {
+      "name": "가위로 소스 짜기",
+      "video_id": "kr_kitchen_001",
+      "query_ko": "가위로 소스를 짜는 장면",
+      "query_en": "squeezing sauce with scissors",
+      "ground_truth": {
+        "start_time": 5.96,
+        "end_time": 11.32
+      }
+    },
+    {
+      "name": "쌀 씻기",
+      "video_id": "kr_kitchen_001",
+      "query_ko": "쌀을 씻는 장면",
+      "query_en": "washing rice",
+      "ground_truth": {
+        "video_id": "kr_kitchen_001",
+        "query_ko": "쌀을 씻는 장면",
+        "query_en": "washing rice",
+        "start_time": 29.0,
+        "end_time": 32.0
+      }
+    },
+    {
+      "name": "다이소 파우치",
+      "video_id": "kr_daiso_001",
+      "query_ko": "여행용 화장품 파우치를 보여주는 장면",
+      "query_en": "a travel makeup pouch",
+      "ground_truth": {
+        "start_time": 3.08,
+        "end_time": 8.4
+      }
+    },
+    {
+      "name": "다이소 시트 세제",
+      "video_id": "kr_daiso_001",
+      "query_ko": "여행용 시트 세제를 보여주는 장면",
+      "query_en": "showing travel laundry detergent sheets",
+      "ground_truth": {
+        "video_id": "kr_daiso_001",
+        "query_ko": "여행용 시트 세제를 보여주는 장면",
+        "query_en": "showing travel laundry detergent sheets",
+        "start_time": 13.0,
+        "end_time": 18.0
+      }
+    }
+  ],
+  "evaluation_note": "Previously used development cases. Ground truth is used only after ranking."
+}

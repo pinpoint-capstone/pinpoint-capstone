@@ -1,0 +1,582 @@
+{
+  "experiment": "English CLIP vs Multilingual CLIP Frame Retrieval",
+  "case_count": 6,
+  "comparison_note": "English CLIP uses English queries and pooler_output. Multilingual CLIP uses Korean queries and sentence embeddings. Both use the same video frame features and point-hit metric. This is not Moment-DETR temporal localization evaluation.",
+  "summary": {
+    "english_clip": {
+      "top1_point_hit_count": 3,
+      "top5_point_hit_count": 5,
+      "top1_point_hit_rate": 0.5,
+      "top5_point_hit_rate": 0.8333333333333334
+    },
+    "multilingual_clip": {
+      "top1_point_hit_count": 2,
+      "top5_point_hit_count": 5,
+      "top1_point_hit_rate": 0.3333333333333333,
+      "top5_point_hit_rate": 0.8333333333333334
+    }
+  },
+  "results": [
+    {
+      "name": "두부 자르기",
+      "video_id": "kr_tofu_001",
+      "query_en": "cutting tofu with a knife",
+      "query_ko": "두부를 칼로 자르는 장면",
+      "ground_truth": {
+        "start_time": 12.0,
+        "end_time": 23.0
+      },
+      "english_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 26,
+            "approx_time_seconds": 52.0,
+            "cosine_similarity": 0.35699397325515747,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 25,
+            "approx_time_seconds": 50.0,
+            "cosine_similarity": 0.3455129861831665,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 22,
+            "approx_time_seconds": 44.0,
+            "cosine_similarity": 0.34290528297424316,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 24,
+            "approx_time_seconds": 48.0,
+            "cosine_similarity": 0.342465341091156,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 9,
+            "approx_time_seconds": 18.0,
+            "cosine_similarity": 0.3369125425815582,
+            "point_in_gt": true
+          }
+        ]
+      },
+      "multilingual_clip": {
+        "top1_point_hit": 1,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 8,
+            "approx_time_seconds": 16.0,
+            "cosine_similarity": 0.24769984185695648,
+            "point_in_gt": true
+          },
+          {
+            "rank": 2,
+            "feature_index": 67,
+            "approx_time_seconds": 134.0,
+            "cosine_similarity": 0.24538849294185638,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 10,
+            "approx_time_seconds": 20.0,
+            "cosine_similarity": 0.24463984370231628,
+            "point_in_gt": true
+          },
+          {
+            "rank": 4,
+            "feature_index": 31,
+            "approx_time_seconds": 62.0,
+            "cosine_similarity": 0.24375686049461365,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 48,
+            "approx_time_seconds": 96.0,
+            "cosine_similarity": 0.24346844851970673,
+            "point_in_gt": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "두부 양념 준비",
+      "video_id": "kr_tofu_001",
+      "query_en": "preparing seasoning sauce for tofu",
+      "query_ko": "두부 양념을 준비하는 장면",
+      "ground_truth": {
+        "video_id": "kr_tofu_001",
+        "query_ko": "두부 양념을 준비하는 장면",
+        "query_en": "preparing seasoning sauce for tofu",
+        "start_time": 95.0,
+        "end_time": 135.0
+      },
+      "english_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 0,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 26,
+            "approx_time_seconds": 52.0,
+            "cosine_similarity": 0.3320101797580719,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 25,
+            "approx_time_seconds": 50.0,
+            "cosine_similarity": 0.32597824931144714,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 22,
+            "approx_time_seconds": 44.0,
+            "cosine_similarity": 0.3237249553203583,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 24,
+            "approx_time_seconds": 48.0,
+            "cosine_similarity": 0.32117560505867004,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 69,
+            "approx_time_seconds": 138.0,
+            "cosine_similarity": 0.3205487132072449,
+            "point_in_gt": false
+          }
+        ]
+      },
+      "multilingual_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 10,
+            "approx_time_seconds": 20.0,
+            "cosine_similarity": 0.24015825986862183,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 67,
+            "approx_time_seconds": 134.0,
+            "cosine_similarity": 0.23981790244579315,
+            "point_in_gt": true
+          },
+          {
+            "rank": 3,
+            "feature_index": 9,
+            "approx_time_seconds": 18.0,
+            "cosine_similarity": 0.23870836198329926,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 29,
+            "approx_time_seconds": 58.0,
+            "cosine_similarity": 0.2383190095424652,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 26,
+            "approx_time_seconds": 52.0,
+            "cosine_similarity": 0.2357448786497116,
+            "point_in_gt": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "가위로 소스 짜기",
+      "video_id": "kr_kitchen_001",
+      "query_en": "squeezing sauce with scissors",
+      "query_ko": "가위로 소스를 짜는 장면",
+      "ground_truth": {
+        "start_time": 5.96,
+        "end_time": 11.32
+      },
+      "english_clip": {
+        "top1_point_hit": 1,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 4,
+            "approx_time_seconds": 8.0,
+            "cosine_similarity": 0.32537490129470825,
+            "point_in_gt": true
+          },
+          {
+            "rank": 2,
+            "feature_index": 17,
+            "approx_time_seconds": 34.0,
+            "cosine_similarity": 0.31144478917121887,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 8,
+            "approx_time_seconds": 16.0,
+            "cosine_similarity": 0.3095349967479706,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 2,
+            "approx_time_seconds": 4.0,
+            "cosine_similarity": 0.3004312515258789,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 5,
+            "approx_time_seconds": 10.0,
+            "cosine_similarity": 0.3001040816307068,
+            "point_in_gt": true
+          }
+        ]
+      },
+      "multilingual_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 0,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 18,
+            "approx_time_seconds": 36.0,
+            "cosine_similarity": 0.25477179884910583,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 9,
+            "approx_time_seconds": 18.0,
+            "cosine_similarity": 0.2389112412929535,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 14,
+            "approx_time_seconds": 28.0,
+            "cosine_similarity": 0.2382960021495819,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 17,
+            "approx_time_seconds": 34.0,
+            "cosine_similarity": 0.23520484566688538,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 8,
+            "approx_time_seconds": 16.0,
+            "cosine_similarity": 0.23402458429336548,
+            "point_in_gt": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "쌀 씻기",
+      "video_id": "kr_kitchen_001",
+      "query_en": "washing rice",
+      "query_ko": "쌀을 씻는 장면",
+      "ground_truth": {
+        "video_id": "kr_kitchen_001",
+        "query_ko": "쌀을 씻는 장면",
+        "query_en": "washing rice",
+        "start_time": 29.0,
+        "end_time": 32.0
+      },
+      "english_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 18,
+            "approx_time_seconds": 36.0,
+            "cosine_similarity": 0.3300067186355591,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 15,
+            "approx_time_seconds": 30.0,
+            "cosine_similarity": 0.2995658814907074,
+            "point_in_gt": true
+          },
+          {
+            "rank": 3,
+            "feature_index": 16,
+            "approx_time_seconds": 32.0,
+            "cosine_similarity": 0.2960599660873413,
+            "point_in_gt": true
+          },
+          {
+            "rank": 4,
+            "feature_index": 11,
+            "approx_time_seconds": 22.0,
+            "cosine_similarity": 0.2898234724998474,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 9,
+            "approx_time_seconds": 18.0,
+            "cosine_similarity": 0.2886335551738739,
+            "point_in_gt": false
+          }
+        ]
+      },
+      "multilingual_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 18,
+            "approx_time_seconds": 36.0,
+            "cosine_similarity": 0.28453850746154785,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 11,
+            "approx_time_seconds": 22.0,
+            "cosine_similarity": 0.2783759534358978,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 14,
+            "approx_time_seconds": 28.0,
+            "cosine_similarity": 0.2685527503490448,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 9,
+            "approx_time_seconds": 18.0,
+            "cosine_similarity": 0.26809951663017273,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 15,
+            "approx_time_seconds": 30.0,
+            "cosine_similarity": 0.266141414642334,
+            "point_in_gt": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "다이소 파우치",
+      "video_id": "kr_daiso_001",
+      "query_en": "a travel makeup pouch",
+      "query_ko": "여행용 화장품 파우치를 보여주는 장면",
+      "ground_truth": {
+        "start_time": 3.08,
+        "end_time": 8.4
+      },
+      "english_clip": {
+        "top1_point_hit": 1,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 3,
+            "approx_time_seconds": 6.0,
+            "cosine_similarity": 0.2973065674304962,
+            "point_in_gt": true
+          },
+          {
+            "rank": 2,
+            "feature_index": 2,
+            "approx_time_seconds": 4.0,
+            "cosine_similarity": 0.2706456780433655,
+            "point_in_gt": true
+          },
+          {
+            "rank": 3,
+            "feature_index": 12,
+            "approx_time_seconds": 24.0,
+            "cosine_similarity": 0.2439069002866745,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 8,
+            "approx_time_seconds": 16.0,
+            "cosine_similarity": 0.23376193642616272,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 9,
+            "approx_time_seconds": 18.0,
+            "cosine_similarity": 0.22895532846450806,
+            "point_in_gt": false
+          }
+        ]
+      },
+      "multilingual_clip": {
+        "top1_point_hit": 1,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 3,
+            "approx_time_seconds": 6.0,
+            "cosine_similarity": 0.2612280249595642,
+            "point_in_gt": true
+          },
+          {
+            "rank": 2,
+            "feature_index": 13,
+            "approx_time_seconds": 26.0,
+            "cosine_similarity": 0.24757997691631317,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 2,
+            "approx_time_seconds": 4.0,
+            "cosine_similarity": 0.24194198846817017,
+            "point_in_gt": true
+          },
+          {
+            "rank": 4,
+            "feature_index": 15,
+            "approx_time_seconds": 30.0,
+            "cosine_similarity": 0.24172522127628326,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 5,
+            "approx_time_seconds": 10.0,
+            "cosine_similarity": 0.23993045091629028,
+            "point_in_gt": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "다이소 시트 세제",
+      "video_id": "kr_daiso_001",
+      "query_en": "showing travel laundry detergent sheets",
+      "query_ko": "여행용 시트 세제를 보여주는 장면",
+      "ground_truth": {
+        "video_id": "kr_daiso_001",
+        "query_ko": "여행용 시트 세제를 보여주는 장면",
+        "query_en": "showing travel laundry detergent sheets",
+        "start_time": 13.0,
+        "end_time": 18.0
+      },
+      "english_clip": {
+        "top1_point_hit": 1,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 7,
+            "approx_time_seconds": 14.0,
+            "cosine_similarity": 0.27408450841903687,
+            "point_in_gt": true
+          },
+          {
+            "rank": 2,
+            "feature_index": 8,
+            "approx_time_seconds": 16.0,
+            "cosine_similarity": 0.2720288038253784,
+            "point_in_gt": true
+          },
+          {
+            "rank": 3,
+            "feature_index": 13,
+            "approx_time_seconds": 26.0,
+            "cosine_similarity": 0.24396221339702606,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 15,
+            "approx_time_seconds": 30.0,
+            "cosine_similarity": 0.23420102894306183,
+            "point_in_gt": false
+          },
+          {
+            "rank": 5,
+            "feature_index": 4,
+            "approx_time_seconds": 8.0,
+            "cosine_similarity": 0.23273609578609467,
+            "point_in_gt": false
+          }
+        ]
+      },
+      "multilingual_clip": {
+        "top1_point_hit": 0,
+        "top5_point_hit": 1,
+        "top_frames": [
+          {
+            "rank": 1,
+            "feature_index": 15,
+            "approx_time_seconds": 30.0,
+            "cosine_similarity": 0.21948456764221191,
+            "point_in_gt": false
+          },
+          {
+            "rank": 2,
+            "feature_index": 13,
+            "approx_time_seconds": 26.0,
+            "cosine_similarity": 0.21777306497097015,
+            "point_in_gt": false
+          },
+          {
+            "rank": 3,
+            "feature_index": 3,
+            "approx_time_seconds": 6.0,
+            "cosine_similarity": 0.21668614447116852,
+            "point_in_gt": false
+          },
+          {
+            "rank": 4,
+            "feature_index": 8,
+            "approx_time_seconds": 16.0,
+            "cosine_similarity": 0.21240361034870148,
+            "point_in_gt": true
+          },
+          {
+            "rank": 5,
+            "feature_index": 5,
+            "approx_time_seconds": 10.0,
+            "cosine_similarity": 0.21171651780605316,
+            "point_in_gt": false
+          }
+        ]
+      }
+    }
+  ]
+}

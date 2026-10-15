@@ -1,0 +1,79 @@
+{
+  "name": "두부 자르기",
+  "video_id": "kr_tofu_001",
+  "query_ko": "두부를 칼로 자르는 장면",
+  "query_en": "cutting tofu with a knife",
+  "video_duration": 164.98,
+  "visual_model": "Moment-DETR",
+  "subtitle_model": "Fine-tuned MiniLM",
+  "candidate_top_k": 3,
+  "visual": [
+    {
+      "video_id": "kr_tofu_001",
+      "query": "cutting tofu with a knife",
+      "start_time": 101.755,
+      "end_time": 118.9581,
+      "score": 0.9842
+    },
+    {
+      "video_id": "kr_tofu_001",
+      "query": "cutting tofu with a knife",
+      "start_time": 86.5174,
+      "end_time": 102.7782,
+      "score": 0.9608
+    },
+    {
+      "video_id": "kr_tofu_001",
+      "query": "cutting tofu with a knife",
+      "start_time": 116.1788,
+      "end_time": 135.8863,
+      "score": 0.7395
+    }
+  ],
+  "ko": [
+    {
+      "start_time": 4.74,
+      "end_time": 8.7,
+      "text": "순식간에 정말 맛있는 두부 요리 하나가 완성돼요",
+      "score": 0.3667,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 23.72,
+      "end_time": 26.46,
+      "text": "제가 산두부는 한 모에 600번 정도 줬는데요",
+      "score": 0.351,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 21.06,
+      "end_time": 26.46,
+      "text": "다 썰었으면 접시에 담아 잠시 놔둘게요 제가 산두부는 한 모에 600번 정도 줬는데요",
+      "score": 0.35,
+      "source": "subtitle"
+    }
+  ],
+  "en": [
+    {
+      "start_time": 12.88,
+      "end_time": 16.32,
+      "text": "먼저 두부 한 모를 준비해주세요 두부는 먼저 반으로 잘라주세요",
+      "score": 0.3233,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 12.88,
+      "end_time": 19.02,
+      "text": "먼저 두부 한 모를 준비해주세요 두부는 먼저 반으로 잘라주세요 그다음 다시 이렇게 넓적하고 큼직하게 썰어주세요",
+      "score": 0.3229,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 8.7,
+      "end_time": 19.02,
+      "text": "고소한 향의 식감까지 부드러워서 생선이나 고기 요리보다 더 맛있어요 먼저 두부 한 모를 준비해주세요 두부는 먼저 반으로 잘라주세요 그다음 다시 이렇게 넓적하고 큼직하게 썰어주세요",
+      "score": 0.3225,
+      "source": "subtitle"
+    }
+  ]
+}

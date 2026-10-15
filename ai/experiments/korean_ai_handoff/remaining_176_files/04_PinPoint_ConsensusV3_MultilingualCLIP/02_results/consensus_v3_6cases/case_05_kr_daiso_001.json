@@ -1,0 +1,79 @@
+{
+  "name": "다이소 파우치",
+  "video_id": "kr_daiso_001",
+  "query_ko": "여행용 화장품 파우치를 보여주는 장면",
+  "query_en": "a travel makeup pouch",
+  "video_duration": 32.08,
+  "visual_model": "Moment-DETR",
+  "subtitle_model": "Fine-tuned MiniLM",
+  "candidate_top_k": 3,
+  "visual": [
+    {
+      "video_id": "kr_daiso_001",
+      "query": "a travel makeup pouch",
+      "start_time": 18.0719,
+      "end_time": 24.5001,
+      "score": 0.9286
+    },
+    {
+      "video_id": "kr_daiso_001",
+      "query": "a travel makeup pouch",
+      "start_time": 27.3392,
+      "end_time": 29.3064,
+      "score": 0.8823
+    },
+    {
+      "video_id": "kr_daiso_001",
+      "query": "a travel makeup pouch",
+      "start_time": 9.3634,
+      "end_time": 16.2502,
+      "score": 0.0028
+    }
+  ],
+  "ko": [
+    {
+      "start_time": 2.08,
+      "end_time": 7.28,
+      "text": "빠르게 소개해 드릴게요 여행 갈 때 무조건 챙기는 파우치 화장품 진짜 많아서 파우치 두세 개씩 챙겼었는데",
+      "score": 0.6242,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 3.08,
+      "end_time": 8.4,
+      "text": "여행 갈 때 무조건 챙기는 파우치 화장품 진짜 많아서 파우치 두세 개씩 챙겼었는데 이제 이거 하나는 끝이에요",
+      "score": 0.6156,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 3.08,
+      "end_time": 7.28,
+      "text": "여행 갈 때 무조건 챙기는 파우치 화장품 진짜 많아서 파우치 두세 개씩 챙겼었는데",
+      "score": 0.5948,
+      "source": "subtitle"
+    }
+  ],
+  "en": [
+    {
+      "start_time": 3.08,
+      "end_time": 8.4,
+      "text": "여행 갈 때 무조건 챙기는 파우치 화장품 진짜 많아서 파우치 두세 개씩 챙겼었는데 이제 이거 하나는 끝이에요",
+      "score": 0.4359,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 2.08,
+      "end_time": 7.28,
+      "text": "빠르게 소개해 드릴게요 여행 갈 때 무조건 챙기는 파우치 화장품 진짜 많아서 파우치 두세 개씩 챙겼었는데",
+      "score": 0.4114,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 3.08,
+      "end_time": 7.28,
+      "text": "여행 갈 때 무조건 챙기는 파우치 화장품 진짜 많아서 파우치 두세 개씩 챙겼었는데",
+      "score": 0.4053,
+      "source": "subtitle"
+    }
+  ]
+}

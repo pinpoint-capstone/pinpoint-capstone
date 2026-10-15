@@ -1,0 +1,79 @@
+{
+  "name": "가위로 소스 짜기",
+  "video_id": "kr_kitchen_001",
+  "query_ko": "가위로 소스를 짜는 장면",
+  "query_en": "squeezing sauce with scissors",
+  "video_duration": 37.08,
+  "visual_model": "Moment-DETR",
+  "subtitle_model": "Fine-tuned MiniLM",
+  "candidate_top_k": 3,
+  "visual": [
+    {
+      "video_id": "kr_kitchen_001",
+      "query": "squeezing sauce with scissors",
+      "start_time": 4.4948,
+      "end_time": 10.2665,
+      "score": 0.8601
+    },
+    {
+      "video_id": "kr_kitchen_001",
+      "query": "squeezing sauce with scissors",
+      "start_time": 23.3688,
+      "end_time": 31.6789,
+      "score": 0.6314
+    },
+    {
+      "video_id": "kr_kitchen_001",
+      "query": "squeezing sauce with scissors",
+      "start_time": 13.9129,
+      "end_time": 20.5038,
+      "score": 0.0139
+    }
+  ],
+  "ko": [
+    {
+      "start_time": 5.96,
+      "end_time": 8.08,
+      "text": "이 가위로 소스 짜는거 진짜 편해요",
+      "score": 0.5815,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 3.36,
+      "end_time": 8.08,
+      "text": "첫번째, 솔직히 이거 필요 없을거야 생각했는데 이 가위로 소스 짜는거 진짜 편해요",
+      "score": 0.4244,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 33.52,
+      "end_time": 34.8,
+      "text": "물 바로 버리기도 좋아요",
+      "score": 0.3893,
+      "source": "subtitle"
+    }
+  ],
+  "en": [
+    {
+      "start_time": 23.32,
+      "end_time": 26.56,
+      "text": "튀김요리도 쉬운데 최고 굽을 땐 316ti의 우염마제품",
+      "score": 0.232,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 24.36,
+      "end_time": 26.56,
+      "text": "최고 굽을 땐 316ti의 우염마제품",
+      "score": 0.2248,
+      "source": "subtitle"
+    },
+    {
+      "start_time": 19.76,
+      "end_time": 21.52,
+      "text": "물고가 있어서 한 방울도 흘리지 않아",
+      "score": 0.1729,
+      "source": "subtitle"
+    }
+  ]
+}

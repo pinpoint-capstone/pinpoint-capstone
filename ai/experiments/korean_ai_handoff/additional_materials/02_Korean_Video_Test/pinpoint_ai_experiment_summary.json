@@ -1,0 +1,23 @@
+{
+  "project": "PinPoint",
+  "evaluation_type": "Korean video retrieval preliminary evaluation",
+  "video_count": 3,
+  "query_count": 6,
+  "baseline": {
+    "model": "Moment-DETR Hybrid",
+    "mean_top1_iou": 0.2542,
+    "mean_best_iou_reference": 0.2542
+  },
+  "fusion": {
+    "model": "Moment-DETR + MiniLM KO/EN subtitle retrieval",
+    "mean_top1_iou": 0.2542,
+    "mean_best_iou_top5": 0.5887
+  },
+  "limitations": [
+    "Ground truth timestamps are approximate.",
+    "Only three videos and six queries were evaluated.",
+    "Hybrid best-IoU reference is not a fully independent evaluation.",
+    "No improvement in Top-1 IoU was observed.",
+    "English queries were manually provided."
+  ]
+}
