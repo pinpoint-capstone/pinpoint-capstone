@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 API = "https://www.googleapis.com/youtube/v3"
+# 이 길이(초) 미만 영상을 검색 결과에서 뺍니다. 기본 0 = 거르지 않음 (필요하면 .env로 조정)
+MIN_VIDEO_SEC = int(os.getenv("MIN_VIDEO_SEC", "0"))
 
 
 def _key() -> str:
@@ -21,6 +23,25 @@ def _key() -> str:
 def _thumb(snippet: dict) -> str | None:
     th = snippet.get("thumbnails", {})
     return (th.get("medium") or th.get("default") or {}).get("url")
+
+
+def fetch_durations(ids: list[str]) -> dict[str, int | None]:
+    """영상 길이(초)를 한 번에 조회합니다(최대 50개, 할당량 1). 실패하면 빈 dict."""
+    if not ids:
+        return {}
+    try:
+        r = requests.get(
+            f"{API}/videos",
+            params={"part": "contentDetails", "id": ",".join(ids[:50]), "key": _key()},
+            timeout=10,
+        )
+        r.raise_for_status()
+    except requests.RequestException:
+        return {}
+    return {
+        it["id"]: _parse_duration(it["contentDetails"].get("duration"))
+        for it in r.json().get("items", [])
+    }
 
 
 def search_youtube_page(
@@ -49,6 +70,16 @@ def search_youtube_page(
             "thumbnail_url": _thumb(it["snippet"]),
             "published_at": it["snippet"]["publishedAt"],
         })
+    if MIN_VIDEO_SEC > 0 and items:
+        durations = fetch_durations([i["youtube_video_id"] for i in items])
+        kept = []
+        for i in items:
+            d = durations.get(i["youtube_video_id"])
+            i["duration"] = d
+            if d is not None and d < MIN_VIDEO_SEC:  # 쇼츠 제외 (길이를 모르면 남김)
+                continue
+            kept.append(i)
+        items = kept
     return items, data.get("nextPageToken")
 
 
