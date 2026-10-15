@@ -1,4 +1,4 @@
-# PinPoint 검색 API 명세 (v0.3)
+# PinPoint 검색 API 명세 (v0.4)
 
 ## 공통 안내
 - 개발 서버 주소: `http://127.0.0.1:8000` (서버를 켜면 `/docs`에서 직접 호출해 볼 수 있어요)
@@ -22,7 +22,8 @@
 4. 프론트가 `start_time`으로 유튜브 플레이어 seek
 
 ## 1. 유튜브 영상 검색
-`GET /api/youtube/search?q=손흥민 골&max_results=5`
+`GET /api/youtube/search?q=손흥민 골&max_results=10`
+다음 페이지: `GET /api/youtube/search?q=손흥민 골&max_results=10&page_token=CAoQAA`
 
 응답 200
 ```json
@@ -35,10 +36,14 @@
       "thumbnail_url": "https://i.ytimg.com/vi/Ps8FeqKyFoM/mqdefault.jpg",
       "published_at": "2026-10-07T12:00:00Z"
     }
-  ]
+  ],
+  "next_page_token": "CAoQAA"
 }
 ```
-`max_results`는 1~10(기본 5)이에요. 유튜브 검색은 호출 한도가 있어서 하루 약 100회가 한계예요.
+- `max_results`는 1~50(기본 5)이에요.
+- `next_page_token`이 있으면 다음 페이지가 있다는 뜻이고, 그 값을 `page_token`으로 보내면 이어서 가져와요. 없으면(`null`) 마지막 페이지예요.
+- 같은 `q`로 이어서 불러야 해요. 토큰은 검색어마다 달라요.
+- 유튜브 검색은 호출 한 번에 할당량 100이 들어서 하루 약 100회가 한계예요. 한 번에 `max_results`를 크게 받는 편이 호출 횟수를 줄여요.
 
 ## 2. 장면 검색 (영상 1개)
 `POST /api/search`
@@ -118,8 +123,8 @@
   "max_new_analyses": 3
 }
 ```
-- `youtube_video_ids`는 선택이에요. 생략하면 분석 완료된 영상 전체가 대상이에요. (최대 20개)
-- `top_k_per_video`는 1~5(기본 3), `max_videos`는 1~10(기본 10)이에요.
+- `youtube_video_ids`는 선택이에요. 생략하면 분석 완료된 영상 전체가 대상이에요. (최대 30개)
+- `top_k_per_video`는 1~5(기본 3), `max_videos`는 1~30(기본 10)이에요.
 - `auto_analyze`는 선택(기본 `false`)이에요. `true`면 `youtube_video_ids`에 있는 미분석 영상의 분석을 시작해요.
 - `max_new_analyses`는 한 번의 요청으로 새로 시작할 최대 영상 수예요(기본 3, 최대 5).
 - 분석을 새로 시작하는 건 `NOT_ANALYZED`/`PENDING` 상태 영상뿐이에요. `FAILED`는 자동 재시도하지 않아요.
@@ -164,22 +169,52 @@
 
 ## 5. 회원가입 / 로그인
 `POST /api/auth/signup`
-{ "email": "user@example.com", "password": "비밀번호", "name": "선택(표시 이름)" }
+```json
+{ "email": "user@example.com", "password": "비밀번호", "name": "민선" }
+```
+`name`은 선택이에요(표시 이름). 안 보내면 `null`로 와요.
 
 응답 200
+```json
 { "user_id": "uuid", "email": "user@example.com", "name": "민선" }
+```
 
-`POST /api/auth/login` (email, password)
+`POST /api/auth/login` (같은 요청 형식)
+
 응답 200
-{ "access_token": "...", "refresh_token": "...", "user_id": "uuid", "email": "...", "name": "민선" }
+```json
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "user_id": "uuid",
+  "email": "user@example.com",
+  "name": "민선"
+}
+```
+- 로그인 실패는 401이에요.
+- 이후 요청에는 `Authorization: Bearer {access_token}` 헤더를 보내요. 토큰은 약 1시간 후 만료돼요.
+- 이메일 인증 없이 가입 직후 로그인할 수 있어요.
 
-## 6. 즐겨찾기
-- POST /api/users/me/favorites
-  { "youtube_video_id": "67AjHnTZo2M", "start_time": 12.74, "end_time": 15.1 }
-  (video_id(내부 uuid)로 보내도 됨. 등록 안 된 영상은 404)
-  응답: 즐겨찾기 정보 + "video": {video_id, youtube_video_id, title, channel_name, thumbnail_url}
-- GET /api/users/me/favorites → { "favorites": [ { ..., "video": {...} } ] } (최신순)
-- DELETE /api/users/me/favorites/{favorite_id}
+## 6. 검색 기록 / 즐겨찾기 (로그인 필수)
+- `GET /api/users/me/history` → `{ "history": [ { "query": "...", "searched_at": "..." } ] }` (최신순)
+- `POST /api/users/me/favorites`
+  ```json
+  { "youtube_video_id": "Ps8FeqKyFoM", "start_time": 132.4, "end_time": 145.0 }
+  ```
+  - 영상은 `youtube_video_id` 또는 `video_id`(내부 uuid) 중 하나로 지정해요. 등록되지 않은 영상이면 404예요.
+  - 응답: 저장된 즐겨찾기(`favorite_id` 포함)와 영상 정보
+  ```json
+  {
+    "favorite_id": "uuid", "user_id": "uuid", "video_id": "내부 uuid",
+    "start_time": 132.4, "end_time": 145.0, "created_at": "2026-10-12T07:39:48+00:00",
+    "video": {
+      "video_id": "내부 uuid", "youtube_video_id": "Ps8FeqKyFoM",
+      "title": "영상 제목", "channel_name": "채널명", "thumbnail_url": "https://..."
+    }
+  }
+  ```
+- `GET /api/users/me/favorites` → `{ "favorites": [ ... ] }` (최신순, 각 항목에 위와 같은 `video` 포함)
+- `DELETE /api/users/me/favorites/{favorite_id}` → `{ "status": "deleted" }`
 
 ## 7. 에러 응답 (공통)
 ```json

@@ -11,17 +11,19 @@ try:
     from . import indexer
     from .subtitles import load_subtitles
     from .translate import to_english
-    from .youtube_search import fetch_video_meta, search_youtube
+    from .youtube_search import fetch_video_meta, search_youtube_page
 except ImportError:
     import indexer
     from subtitles import load_subtitles
     from translate import to_english
-    from youtube_search import fetch_video_meta, search_youtube
+    from youtube_search import fetch_video_meta, search_youtube_page
 
 logger = logging.getLogger("uvicorn.error")
 
 YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
+PAGE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{1,200}$")
+MAX_MULTI_VIDEOS = 30  # /api/search/multi 한 번에 다룰 최대 영상 수
 # 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
 SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
 
@@ -226,14 +228,18 @@ def create_search_router(get_current_user) -> APIRouter:
             return None
 
     @router.get("/api/youtube/search")
-    def youtube_search(q: str, max_results: int = 5):
+    def youtube_search(q: str, max_results: int = 5, page_token: str | None = None):
         if not q.strip():
             return _err(400, "EMPTY_QUERY", "검색어가 비어 있습니다.")
+        if page_token and not PAGE_TOKEN_RE.match(page_token):
+            return _err(400, "INVALID_PAGE_TOKEN", "올바르지 않은 page_token입니다.")
         try:
-            items = search_youtube(q.strip(), min(max(max_results, 1), 10))
+            items, next_token = search_youtube_page(
+                q.strip(), min(max(max_results, 1), 50), page_token or None
+            )
         except requests.HTTPError as e:
             return _youtube_error(e)
-        return {"items": items}
+        return {"items": items, "next_page_token": next_token}
 
     @router.get("/api/videos/youtube/{youtube_video_id}/status")
     def video_status(youtube_video_id: str):
@@ -327,12 +333,12 @@ def create_search_router(get_current_user) -> APIRouter:
 
         ids = None
         if body.youtube_video_ids:
-            ids = [i.strip() for i in body.youtube_video_ids][:20]
+            ids = [i.strip() for i in body.youtube_video_ids][:MAX_MULTI_VIDEOS]
             if not all(YOUTUBE_ID_RE.match(i) for i in ids):
                 return _err(400, "INVALID_YOUTUBE_ID", "올바르지 않은 영상 ID가 있습니다.")
 
         top_k = min(max(body.top_k_per_video, 1), 5)
-        limit = min(max(body.max_videos, 1), 10)
+        limit = min(max(body.max_videos, 1), MAX_MULTI_VIDEOS)
         rows = indexer.list_indexed(ids, limit)
 
         videos = []

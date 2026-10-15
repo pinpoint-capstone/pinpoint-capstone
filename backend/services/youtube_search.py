@@ -23,24 +23,37 @@ def _thumb(snippet: dict) -> str | None:
     return (th.get("medium") or th.get("default") or {}).get("url")
 
 
-def search_youtube(query: str, max_results: int = 5) -> list[dict]:
-    r = requests.get(
-        f"{API}/search",
-        params={"part": "snippet", "q": query, "type": "video",
-                "maxResults": max_results, "key": _key()},
-        timeout=10,
-    )
+def search_youtube_page(
+    query: str, max_results: int = 5, page_token: str | None = None
+) -> tuple[list[dict], str | None]:
+    """한 페이지를 검색합니다. (영상 목록, 다음 페이지 토큰)을 돌려줍니다.
+    다음 페이지가 없으면 토큰은 None입니다. 호출 한 번에 유튜브 할당량 100이 듭니다."""
+    params = {"part": "snippet", "q": query, "type": "video",
+              "maxResults": max_results, "key": _key()}
+    if page_token:
+        params["pageToken"] = page_token
+    r = requests.get(f"{API}/search", params=params, timeout=10)
     r.raise_for_status()
-    return [
-        {
-            "youtube_video_id": it["id"]["videoId"],
+    data = r.json()
+
+    items, seen = [], set()
+    for it in data.get("items", []):
+        vid = it.get("id", {}).get("videoId")
+        if not vid or vid in seen:  # 같은 영상이 두 번 오면 한 번만
+            continue
+        seen.add(vid)
+        items.append({
+            "youtube_video_id": vid,
             "title": html.unescape(it["snippet"]["title"]),
             "channel_name": html.unescape(it["snippet"]["channelTitle"]),
             "thumbnail_url": _thumb(it["snippet"]),
             "published_at": it["snippet"]["publishedAt"],
-        }
-        for it in r.json().get("items", [])
-    ]
+        })
+    return items, data.get("nextPageToken")
+
+
+def search_youtube(query: str, max_results: int = 5) -> list[dict]:
+    return search_youtube_page(query, max_results)[0]
 
 
 def _parse_duration(iso: str) -> int | None:
@@ -73,5 +86,7 @@ def fetch_video_meta(youtube_video_id: str) -> dict | None:
 
 
 if __name__ == "__main__":
-    for v in search_youtube(sys.argv[1] if len(sys.argv) > 1 else "손흥민 골"):
+    items, nxt = search_youtube_page(sys.argv[1] if len(sys.argv) > 1 else "손흥민 골")
+    for v in items:
         print(v["youtube_video_id"], "|", v["title"], "|", v["channel_name"])
+    print("next_page_token:", nxt)
