@@ -1,5 +1,5 @@
-
-export interface SearchResultItem {
+export interface SearchResultItem
+ {
   video_id: string;
   segment_id: string;
   start_time: number; // seconds (float)

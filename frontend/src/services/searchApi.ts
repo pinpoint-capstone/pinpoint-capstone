@@ -253,9 +253,9 @@ export async function searchMultipleVideos(
       query: query.trim(),
       youtube_video_ids: youtubeVideoIds,
       top_k_per_video: topKPerVideo,
-      max_videos: 10,
+      max_videos: 20,
       auto_analyze: autoAnalyze,
-      max_new_analyses: 3,
+      max_new_analyses: 5,
     }),
   });
 

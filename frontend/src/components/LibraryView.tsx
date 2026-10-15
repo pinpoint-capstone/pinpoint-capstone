@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 
 import { SearchResultItem, VideoMetadata } from '../types';
-import { MOCK_VIDEOS } from '../data/mockData';
 import { formatTime } from '../utils/formatters';
 
 type LibraryTab = 'saved' | 'recent';
@@ -237,7 +236,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     segment: SearchResultItem,
     type: 'saved' | 'recent'
   ) => {
-    const video = videosMap[segment.video_id] ?? MOCK_VIDEOS[segment.video_id];
+    const video = videosMap[segment.video_id];
 
     return (
       <div

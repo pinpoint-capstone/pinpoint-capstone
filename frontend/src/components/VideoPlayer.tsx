@@ -120,7 +120,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const onSeekHandledRef = useRef(onSeekHandled);
   const pendingSeekRef = useRef<number | null>(null);
 
-  const isYouTube = Boolean(video.youtube_video_id);
+ const isYouTube  = Boolean(video.youtube_video_id);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -202,8 +202,6 @@ const playerMount = document.createElement('div');
 container.appendChild(playerMount);
 
 createdPlayer = new YT.Player(playerMount, {
-          width: '100%',
-          height: '100%',
           videoId: video.youtube_video_id!,
           playerVars: {
             autoplay: 0,

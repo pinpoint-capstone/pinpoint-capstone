@@ -1,7 +1,5 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { VideoMetadata, SearchResultItem } from './types';
-import { MOCK_VIDEOS } from './data/mockData';
 import {
   searchYouTubeVideos,
   searchMultipleVideos,
@@ -11,6 +9,7 @@ import {
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { PlayerView } from './components/PlayerView';
+import { VideoSearchListView } from './components/VideoSearchListView';
 import { BrowseView } from './components/BrowseView';
 import { AuthView } from './components/AuthView';
 import { LibraryView } from './components/LibraryView';
@@ -49,17 +48,15 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // 기존 Mock 영상 + 실제 YouTube 영상 정보 관리
-  const [videosMap, setVideosMap] =
+// 실제 YouTube 영상 정보 관리
+const [videosMap, setVideosMap] =
   useState<Record<string, VideoMetadata>>(() => {
     try {
       const saved = localStorage.getItem('pinpoint-video-metadata');
 
-      return saved
-        ? { ...MOCK_VIDEOS, ...JSON.parse(saved) }
-        : MOCK_VIDEOS;
+      return saved ? JSON.parse(saved) : {};
     } catch {
-      return MOCK_VIDEOS;
+      return {};
     }
   });
 
@@ -150,6 +147,8 @@ export default function App() {
 
   // 실제 YouTube + AI 다중 영상 검색
   const executeSearch = async (query: string, targetVideoId?: string) => {
+    // 검색 결과는 목록에서 사용자가 직접 선택하도록 처리
+    void targetVideoId;
     const trimmedQuery = query.trim();
 
     if (!trimmedQuery) return;
@@ -177,7 +176,7 @@ export default function App() {
 
     try {
       // 1. YouTube에서 관련 영상 검색
-      const youtubeResponse = await searchYouTubeVideos(trimmedQuery, 5);
+      const youtubeResponse = await searchYouTubeVideos(trimmedQuery, 20);
 
       if (currentSearchId !== searchIdRef.current) return;
 
@@ -205,27 +204,24 @@ export default function App() {
         };
       }
 
-  setVideosMap((previous) => {
-  const updated = {
-    ...previous,
-    ...youtubeVideos,
-  };
+      setVideosMap((previous) => {
+        const updated = {
+          ...previous,
+          ...youtubeVideos,
+        };
 
-  localStorage.setItem(
-    'pinpoint-video-metadata',
-    JSON.stringify(updated)
-  );
+        localStorage.setItem(
+          'pinpoint-video-metadata',
+          JSON.stringify(updated)
+        );
 
-  return updated;
-});
+        return updated;
+      });
 
       if (youtubeVideoIds.length === 0) {
         setIsLoading(false);
         return;
       }
-
-      // 분석 결과가 없을 때 보여줄 첫 번째 YouTube 영상
-      setCurrentVideoId(youtubeVideoIds[0]);
 
       // 3. 백엔드 응답을 화면에 반영하는 공통 함수
       const applySearchResponse = (response: MultiSearchResponse) => {
@@ -233,53 +229,37 @@ export default function App() {
 
         const { results, videos } = convertMultiSearchResults(response);
 
-       setVideosMap((previous) => {
-  const updated = {
-    ...previous,
-    ...videos,
-  };
+        setVideosMap((previous) => {
+          const updated = {
+            ...previous,
+            ...videos,
+          };
 
-  localStorage.setItem(
-    'pinpoint-video-metadata',
-    JSON.stringify(updated)
-  );
+          localStorage.setItem(
+            'pinpoint-video-metadata',
+            JSON.stringify(updated)
+          );
 
-  return updated;
-});
+          return updated;
+        });
+
         setSearchResults(results);
 
-        if (results.length > 0) {
+        // 검색 결과가 갱신되어도 자동으로 첫 번째 영상을 선택하지 않음
+        // 사용자가 직접 선택한 구간만 갱신된 결과에서 유지
+        if (selectedSegmentRef.current) {
           const previousSelection = selectedSegmentRef.current;
 
-          // 사용자가 선택한 구간이 여전히 존재하면 선택 유지
-          const preservedItem = previousSelection
-            ? results.find(
-                (item) =>
-                  item.segment_id === previousSelection.segment_id &&
-                  item.video_id === previousSelection.video_id
-              )
-            : null;
+          const preservedItem = results.find(
+            (item) =>
+              item.segment_id === previousSelection.segment_id &&
+              item.video_id === previousSelection.video_id
+          );
 
-          const matchedItem = targetVideoId
-            ? results.find(
-                (item) =>
-                  item.video_id === targetVideoId ||
-                  videos[item.video_id]?.youtube_video_id === targetVideoId
-              )
-            : null;
-
-          const selectedItem =
-            preservedItem ||
-            previousSelection ||
-            matchedItem ||
-            results[0];
-
-          selectedSegmentRef.current = selectedItem;
-setSelectedSegment(selectedItem);
-setCurrentVideoId(selectedItem.video_id);
-
-// 검색 후 자동으로 선택된 구간도 최근 본 기록에 저장
-saveRecentSegment(selectedItem);
+          if (preservedItem) {
+            selectedSegmentRef.current = preservedItem;
+            setSelectedSegment(preservedItem);
+          }
         }
 
         // 초기 검색 로딩은 첫 응답이 오면 종료
@@ -470,11 +450,8 @@ saveRecentSegment(selectedItem);
     }
   };
 
-  // 현재 선택된 영상
-  const activeVideo =
-    videosMap[currentVideoId] ||
-    videosMap['abc123'] ||
-    Object.values(videosMap)[0];
+// 현재 사용자가 선택한 실제 영상
+const activeVideo = videosMap[currentVideoId];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
@@ -509,17 +486,27 @@ saveRecentSegment(selectedItem);
       )}
 
       {currentView === 'player' && (
-        <PlayerView
-          currentVideo={activeVideo}
-          selectedSegment={selectedSegment}
-          searchResults={searchResults}
-          videosMap={videosMap}
-          isLoading={isLoading || isAnalyzing}
-          searchQuery={searchQuery}
-          onSelectResult={handleSelectResult}
-          onNavigateHome={handleNavigateHome}
-          onSelectSuggestion={(rec) => executeSearch(rec)}
-        />
+        selectedSegment === null ? (
+          <VideoSearchListView
+            results={searchResults}
+            videosMap={videosMap}
+            isLoading={isLoading || isAnalyzing}
+            searchQuery={searchQuery}
+            onSelectResult={handleSelectResult}
+          />
+        ) : (
+          <PlayerView
+            currentVideo={activeVideo}
+            selectedSegment={selectedSegment}
+            searchResults={searchResults}
+            videosMap={videosMap}
+            isLoading={isLoading || isAnalyzing}
+            searchQuery={searchQuery}
+            onSelectResult={handleSelectResult}
+            onNavigateHome={handleNavigateHome}
+            onSelectSuggestion={(rec) => executeSearch(rec)}
+          />
+        )
       )}
 
       {currentView === 'auth' && (
