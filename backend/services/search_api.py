@@ -35,6 +35,9 @@ SUBTITLE_MIN_SCORE = float(os.getenv("SUBTITLE_MIN_SCORE", "0.35"))
 # 자막 검색(MiniLM)은 가벼워서 영상 분석(Whisper)과 자물쇠를 따로 씁니다.
 # 분석이 도는 동안에도 검색이 기다리지 않게 하려는 것입니다.
 _SUBTITLE_SEARCH_LOCK = threading.Lock()
+# 동시에 들어온 요청들이 각자 "아직 여유 있다"고 판단해 한꺼번에 분석을 시작하지 않도록,
+# 분석 시작 여부를 확인하고 시작하는 과정을 한 번에 하나씩만 하게 합니다.
+_START_LOCK = threading.Lock()
 
 class SearchRequest(BaseModel):
     youtube_video_id: str
@@ -414,7 +417,15 @@ def create_search_router(get_current_user) -> APIRouter:
                     status = "PENDING"  # 분석은 됐지만 이 컴퓨터에 feature 파일이 없어 다시 분석이 필요함
                 # FAILED는 자동 재시도하지 않음 (사용자가 클릭하면 POST /api/search로 재시도)
                 if budget > 0 and status in ("NOT_ANALYZED", "PENDING"):
-                    new_status, started = _try_start_analysis(yid, row, background_tasks)
+                    with _START_LOCK:
+                        try:
+                            has_room = indexer.count_processing() < MAX_INFLIGHT_ANALYSES
+                        except Exception:
+                            has_room = False  # 확인이 안 되면 새로 시작하지 않음
+                        if has_room:
+                            new_status, started = _try_start_analysis(yid, row, background_tasks)
+                        else:
+                            new_status, started = None, False
                     if new_status:
                         status = new_status
                     if started:
