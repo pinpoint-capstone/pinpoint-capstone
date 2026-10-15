@@ -22,6 +22,10 @@ logger = logging.getLogger("uvicorn.error")
 
 YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 MAX_DURATION_SEC = 30 * 60  # 임시값. 팀 합의 후 조정
+# 자막 구간은 말 한 문장 길이(1초 안팎)라 그대로는 장면을 보기 어렵습니다.
+# 시작을 조금 앞당기고, 최소 길이를 보장합니다. (.env로 조정 가능)
+SUBTITLE_PAD_BEFORE = float(os.getenv("SUBTITLE_PAD_BEFORE", "2.0"))
+SUBTITLE_MIN_LEN = float(os.getenv("SUBTITLE_MIN_LEN", "6.0"))
 PAGE_TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{1,200}$")
 MAX_MULTI_VIDEOS = 30  # /api/search/multi 한 번에 다룰 최대 영상 수
 # 자막 검색 결과를 인정하는 최소 유사도(0~1). backend/.env의 SUBTITLE_MIN_SCORE로 조정
@@ -76,6 +80,18 @@ def _dedupe(moments: list[dict], top_k: int, threshold: float = 0.5) -> list[dic
         if len(kept) == top_k:
             break
     return kept
+
+
+def _widen_subtitle(moments: list[dict]) -> list[dict]:
+    """자막(source=subtitle) 구간만 시작을 앞당기고 최소 길이를 보장합니다."""
+    out = []
+    for m in moments:
+        if m.get("source") == "subtitle":
+            start = max(0.0, m["start_time"] - SUBTITLE_PAD_BEFORE)
+            end = max(m["end_time"], start + SUBTITLE_MIN_LEN)
+            m = {**m, "start_time": round(start, 2), "end_time": round(end, 2)}
+        out.append(m)
+    return out
 
 
 def _visual_search(video_id: str, feature_path: str, english_query: str, top_k: int):
@@ -135,7 +151,7 @@ def predict_moments(
                         }
                         for r in raw
                     ]
-                    return _dedupe(moments, top_k)
+                    return _dedupe(_widen_subtitle(moments), top_k)
             # 자막 결과가 없으면, 영상 feature가 있을 때만 아래 영상 검색으로 이어갑니다.
 
         # 2) 자막이 없을 때만 visual fallback
