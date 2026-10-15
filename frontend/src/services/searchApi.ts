@@ -255,7 +255,7 @@ export async function searchMultipleVideos(
       top_k_per_video: topKPerVideo,
       max_videos: 20,
       auto_analyze: autoAnalyze,
-      max_new_analyses: 5,
+      max_new_analyses: 4,
     }),
   });
 

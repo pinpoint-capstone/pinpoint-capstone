@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { VideoMetadata, SearchResultItem } from './types';
 import {
@@ -5,6 +6,7 @@ import {
   searchMultipleVideos,
   convertMultiSearchResults,
   MultiSearchResponse,
+  PendingVideoStatus,
 } from './services/searchApi';
 import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
@@ -26,7 +28,6 @@ const POLLING_INTERVAL_MS = 3000;
 function hasPendingAnalysis(response: MultiSearchResponse): boolean {
   return (response.pending ?? []).some(
     (item) =>
-      item.status === 'NOT_ANALYZED' ||
       item.status === 'PENDING' ||
       item.status === 'PROCESSING'
   );
@@ -36,24 +37,21 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
-
       if (path === '/browse') return 'browse';
       if (path === '/search') return 'player';
       if (path === '/login') return 'auth';
       if (path === '/library') return 'library';
     }
-
     return 'home';
   });
 
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-// 실제 YouTube 영상 정보 관리
-const [videosMap, setVideosMap] =
-  useState<Record<string, VideoMetadata>>(() => {
+  const [videosMap, setVideosMap] = useState<
+    Record<string, VideoMetadata>
+  >(() => {
     try {
       const saved = localStorage.getItem('pinpoint-video-metadata');
-
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -61,31 +59,38 @@ const [videosMap, setVideosMap] =
   });
 
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
-
+  const [youtubeVideoIds, setYoutubeVideoIds] = useState<string[]>([]);
   const [selectedSegment, setSelectedSegment] =
     useState<SearchResultItem | null>(null);
-
   const [currentVideoId, setCurrentVideoId] = useState<string>('abc123');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // 초기 검색과 백그라운드 분석을 구분
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [analysisStatuses, setAnalysisStatuses] = useState<
+    Record<string, PendingVideoStatus>
+  >({});
 
-  // 새로운 검색 또는 화면 이동 시 이전 검색을 무효화
   const searchIdRef = useRef(0);
-
-  // 자동 재검색 타이머 관리
   const pollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // 사용자가 직접 선택한 검색 결과를 자동 갱신에서 보호
   const selectedSegmentRef = useRef<SearchResultItem | null>(null);
 
-  // 로그인 사용자 정보 복원
+  // 현재 검색의 최신 조건을 보관
+  const searchContextRef = useRef<{
+    query: string;
+    videoIds: string[];
+  } | null>(null);
+
+  // 중복 분석 요청 방지
+  const analyzingVideoIdsRef = useRef<Set<string>>(new Set());
+
+  // 동시에 여러 폴링 요청이 발생하지 않도록 관리
+  const pollingInFlightRef = useRef(false);
+  const refreshRequestedRef = useRef(false);
+
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window === 'undefined') return null;
 
     const savedUser = localStorage.getItem('pinpoint-user');
-
     if (!savedUser) return null;
 
     try {
@@ -95,19 +100,26 @@ const [videosMap, setVideosMap] =
     }
   });
 
-  const stopPolling = () => {
-    searchIdRef.current += 1;
-
+  const clearPollingTimer = () => {
     if (pollingTimerRef.current !== null) {
       clearTimeout(pollingTimerRef.current);
       pollingTimerRef.current = null;
     }
+  };
+
+  const stopPolling = () => {
+    searchIdRef.current += 1;
+    clearPollingTimer();
+
+    searchContextRef.current = null;
+    analyzingVideoIdsRef.current.clear();
+    pollingInFlightRef.current = false;
+    refreshRequestedRef.current = false;
 
     setIsLoading(false);
     setIsAnalyzing(false);
   };
 
-  // 컴포넌트 종료 시 타이머 정리
   useEffect(() => {
     return () => {
       searchIdRef.current += 1;
@@ -118,7 +130,6 @@ const [videosMap, setVideosMap] =
     };
   }, []);
 
-  // 브라우저 뒤로가기 / 앞으로가기 처리
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
@@ -142,21 +153,177 @@ const [videosMap, setVideosMap] =
 
     window.addEventListener('popstate', handlePopState);
 
-    return () => window.removeEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, []);
 
-  // 실제 YouTube + AI 다중 영상 검색
-  const executeSearch = async (query: string, targetVideoId?: string) => {
-    // 검색 결과는 목록에서 사용자가 직접 선택하도록 처리
-    void targetVideoId;
-    const trimmedQuery = query.trim();
+  // 백엔드 검색 결과를 공통으로 반영
+  const applySearchResponse = (
+    response: MultiSearchResponse,
+    currentSearchId: number
+  ): boolean => {
+    if (currentSearchId !== searchIdRef.current) {
+      return false;
+    }
 
+    const { results, videos } = convertMultiSearchResults(response);
+
+    setVideosMap((previous) => {
+      const updated = {
+        ...previous,
+        ...videos,
+      };
+
+      localStorage.setItem(
+        'pinpoint-video-metadata',
+        JSON.stringify(updated)
+      );
+
+      return updated;
+    });
+
+    setSearchResults(results);
+
+    const nextStatuses: Record<string, PendingVideoStatus> = {};
+
+    for (const video of response.pending ?? []) {
+      nextStatuses[video.youtube_video_id] = video.status;
+    }
+
+    // 아직 요청 중인 영상의 상태를 유지
+    for (const youtubeId of analyzingVideoIdsRef.current) {
+      if (
+        nextStatuses[youtubeId] === undefined ||
+        nextStatuses[youtubeId] === 'NOT_ANALYZED'
+      ) {
+        nextStatuses[youtubeId] = 'PENDING';
+      }
+    }
+
+    setAnalysisStatuses(nextStatuses);
+
+    // 선택한 구간은 자동 갱신으로 다른 구간으로 바꾸지 않음
+    if (selectedSegmentRef.current) {
+      const previousSelection = selectedSegmentRef.current;
+
+      const preservedItem = results.find(
+        (item) =>
+          item.segment_id === previousSelection.segment_id &&
+          item.video_id === previousSelection.video_id
+      );
+
+      if (preservedItem) {
+        selectedSegmentRef.current = preservedItem;
+        setSelectedSegment(preservedItem);
+      }
+    }
+
+    setIsLoading(false);
+
+    const stillAnalyzing =
+      hasPendingAnalysis(response) ||
+      analyzingVideoIdsRef.current.size > 0;
+
+    setIsAnalyzing(stillAnalyzing);
+
+    return stillAnalyzing;
+  };
+
+  // 현재 검색의 전체 영상 결과를 갱신하는 단일 폴링 함수
+  const refreshSearchResults = async (
+    currentSearchId: number
+  ): Promise<void> => {
+    if (currentSearchId !== searchIdRef.current) return;
+
+    const context = searchContextRef.current;
+    if (!context || context.videoIds.length === 0) return;
+
+    if (pollingInFlightRef.current) {
+      refreshRequestedRef.current = true;
+      return;
+    }
+
+    pollingInFlightRef.current = true;
+    clearPollingTimer();
+
+    let shouldContinuePolling = false;
+
+    try {
+      const response = await searchMultipleVideos(
+        context.query,
+        context.videoIds,
+        3,
+        false
+      );
+
+      if (currentSearchId !== searchIdRef.current) return;
+
+      // 분석 요청이 완료되어 상태가 변경된 영상 정리
+      for (const youtubeId of analyzingVideoIdsRef.current) {
+        const pendingItem = (response.pending ?? []).find(
+          (item) => item.youtube_video_id === youtubeId
+        );
+
+        const hasVideoResult = (response.videos ?? []).some(
+          (entry) => entry.video.youtube_video_id === youtubeId
+        );
+
+        if (
+          hasVideoResult ||
+          pendingItem?.status === 'FAILED' ||
+          pendingItem?.status === 'TOO_LONG' ||
+          pendingItem?.status === 'NOT_FOUND'
+        ) {
+          analyzingVideoIdsRef.current.delete(youtubeId);
+        }
+      }
+
+      shouldContinuePolling = applySearchResponse(
+        response,
+        currentSearchId
+      );
+    } catch (error) {
+      if (currentSearchId !== searchIdRef.current) return;
+
+      console.error('AI 검색 결과 갱신 오류:', error);
+      setIsLoading(false);
+
+      // 일시적인 네트워크 오류는 다음 폴링에서 재시도
+      shouldContinuePolling = true;
+    } finally {
+      if (currentSearchId === searchIdRef.current) {
+        pollingInFlightRef.current = false;
+
+        if (refreshRequestedRef.current) {
+          refreshRequestedRef.current = false;
+
+          void refreshSearchResults(currentSearchId);
+        } else if (shouldContinuePolling) {
+          pollingTimerRef.current = setTimeout(() => {
+            pollingTimerRef.current = null;
+            void refreshSearchResults(currentSearchId);
+          }, POLLING_INTERVAL_MS);
+        } else {
+          setIsAnalyzing(false);
+        }
+      }
+    }
+  };
+
+  // YouTube 검색 + 최초 AI 분석
+  const executeSearch = async (
+    query: string,
+    targetVideoId?: string
+  ) => {
+    void targetVideoId;
+
+    const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
-    // 이전 검색과 자동 재검색 중단
     stopPolling();
-    const currentSearchId = searchIdRef.current;
 
+    const currentSearchId = searchIdRef.current;
     selectedSegmentRef.current = null;
 
     setSearchQuery(trimmedQuery);
@@ -173,18 +340,24 @@ const [videosMap, setVideosMap] =
     setIsAnalyzing(false);
     setSearchResults([]);
     setSelectedSegment(null);
+    setYoutubeVideoIds([]);
+    setAnalysisStatuses({});
 
     try {
-      // 1. YouTube에서 관련 영상 검색
-      const youtubeResponse = await searchYouTubeVideos(trimmedQuery, 20);
+      // 1. YouTube 영상 검색
+      const youtubeResponse = await searchYouTubeVideos(
+        trimmedQuery,
+        20
+      );
 
       if (currentSearchId !== searchIdRef.current) return;
 
-      const youtubeVideoIds = youtubeResponse.items.map(
+      const videoIds = youtubeResponse.items.map(
         (video) => video.youtube_video_id
       );
 
-      // 2. YouTube 영상 정보를 기존 프론트 형식으로 변환
+      setYoutubeVideoIds(videoIds);
+
       const youtubeVideos: Record<string, VideoMetadata> = {};
 
       for (const video of youtubeResponse.items) {
@@ -218,106 +391,122 @@ const [videosMap, setVideosMap] =
         return updated;
       });
 
-      if (youtubeVideoIds.length === 0) {
+      if (videoIds.length === 0) {
         setIsLoading(false);
         return;
       }
 
-      // 3. 백엔드 응답을 화면에 반영하는 공통 함수
-      const applySearchResponse = (response: MultiSearchResponse) => {
-        if (currentSearchId !== searchIdRef.current) return;
-
-        const { results, videos } = convertMultiSearchResults(response);
-
-        setVideosMap((previous) => {
-          const updated = {
-            ...previous,
-            ...videos,
-          };
-
-          localStorage.setItem(
-            'pinpoint-video-metadata',
-            JSON.stringify(updated)
-          );
-
-          return updated;
-        });
-
-        setSearchResults(results);
-
-        // 검색 결과가 갱신되어도 자동으로 첫 번째 영상을 선택하지 않음
-        // 사용자가 직접 선택한 구간만 갱신된 결과에서 유지
-        if (selectedSegmentRef.current) {
-          const previousSelection = selectedSegmentRef.current;
-
-          const preservedItem = results.find(
-            (item) =>
-              item.segment_id === previousSelection.segment_id &&
-              item.video_id === previousSelection.video_id
-          );
-
-          if (preservedItem) {
-            selectedSegmentRef.current = preservedItem;
-            setSelectedSegment(preservedItem);
-          }
-        }
-
-        // 초기 검색 로딩은 첫 응답이 오면 종료
-        setIsLoading(false);
-
-        // 아직 분석 중인 영상이 있는지 확인
-        const stillAnalyzing = hasPendingAnalysis(response);
-        setIsAnalyzing(stillAnalyzing);
-
-        console.log('AI 다중 검색 결과:', response);
-
-        if (stillAnalyzing) {
-          // 응답을 받은 후 3초 기다렸다가 다시 검색
-          pollingTimerRef.current = setTimeout(() => {
-            pollingTimerRef.current = null;
-
-            if (currentSearchId !== searchIdRef.current) return;
-
-            void pollSearchResults();
-          }, POLLING_INTERVAL_MS);
-        }
+      searchContextRef.current = {
+        query: trimmedQuery,
+        videoIds,
       };
 
-      // 4. 동일한 검색 조건으로 3초마다 재조회
-      const pollSearchResults = async () => {
-        if (currentSearchId !== searchIdRef.current) return;
+      // 2. 최초 요청에서만 최대 4개 영상 자동 분석
+      const response = await searchMultipleVideos(
+        trimmedQuery,
+        videoIds,
+        3,
+        true
+      );
 
-        try {
-          const response = await searchMultipleVideos(
-            trimmedQuery,
-            youtubeVideoIds,
-            3,
-            true
-          );
+      if (currentSearchId !== searchIdRef.current) return;
 
-          if (currentSearchId !== searchIdRef.current) return;
+      const stillAnalyzing = applySearchResponse(
+        response,
+        currentSearchId
+      );
 
-          applySearchResponse(response);
-        } catch (error) {
-          if (currentSearchId !== searchIdRef.current) return;
+      if (stillAnalyzing) {
+        clearPollingTimer();
 
-          console.error('AI 다중 검색 오류:', error);
-          setIsLoading(false);
-          setIsAnalyzing(false);
-        }
-      };
-
-      // 5. 최초 AI 검색 실행
-      await pollSearchResults();
+        pollingTimerRef.current = setTimeout(() => {
+          pollingTimerRef.current = null;
+          void refreshSearchResults(currentSearchId);
+        }, POLLING_INTERVAL_MS);
+      }
     } catch (error) {
       if (currentSearchId !== searchIdRef.current) return;
 
       console.error('실제 영상 검색 오류:', error);
-      setSearchResults([]);
-      setSelectedSegment(null);
-      selectedSegmentRef.current = null;
       setIsLoading(false);
       setIsAnalyzing(false);
+    }
+  };
+
+  // 사용자가 클릭한 영상 하나만 AI 분석 요청
+  const handleAnalyzeVideo = async (
+    youtubeVideoId: string
+  ) => {
+    const context = searchContextRef.current;
+    if (!context) return;
+
+    if (
+      !context.videoIds.includes(youtubeVideoId) ||
+      analyzingVideoIdsRef.current.has(youtubeVideoId) ||
+      analysisStatuses[youtubeVideoId] === 'PENDING' ||
+      analysisStatuses[youtubeVideoId] === 'PROCESSING'
+    ) {
+      return;
+    }
+
+    const currentSearchId = searchIdRef.current;
+
+    analyzingVideoIdsRef.current.add(youtubeVideoId);
+
+    setAnalysisStatuses((previous) => ({
+      ...previous,
+      [youtubeVideoId]: 'PENDING',
+    }));
+
+    setIsAnalyzing(true);
+
+    try {
+      // 전체 영상이 아니라 클릭한 영상 하나만 요청
+      const response = await searchMultipleVideos(
+        context.query,
+        [youtubeVideoId],
+        3,
+        true
+      );
+
+      if (currentSearchId !== searchIdRef.current) return;
+
+      const pendingItem = (response.pending ?? []).find(
+        (item) => item.youtube_video_id === youtubeVideoId
+      );
+
+      const hasVideoResult = (response.videos ?? []).some(
+        (entry) =>
+          entry.video.youtube_video_id === youtubeVideoId
+      );
+
+      if (
+        hasVideoResult ||
+        pendingItem?.status === 'FAILED' ||
+        pendingItem?.status === 'TOO_LONG' ||
+        pendingItem?.status === 'NOT_FOUND'
+      ) {
+        analyzingVideoIdsRef.current.delete(youtubeVideoId);
+      }
+
+      // 다른 영상 결과를 지우지 않고 전체 결과 갱신
+      clearPollingTimer();
+      void refreshSearchResults(currentSearchId);
+    } catch (error) {
+      if (currentSearchId !== searchIdRef.current) return;
+
+      console.error('개별 영상 AI 분석 요청 오류:', error);
+
+      analyzingVideoIdsRef.current.delete(youtubeVideoId);
+
+      setAnalysisStatuses((previous) => ({
+        ...previous,
+        [youtubeVideoId]: 'FAILED',
+      }));
+
+      // 기존 자동 분석은 계속 확인
+      clearPollingTimer();
+      void refreshSearchResults(currentSearchId);
     }
   };
 
@@ -328,12 +517,11 @@ const [videosMap, setVideosMap] =
         localStorage.getItem('pinpoint-recent-segments') || '[]'
       ) as SearchResultItem[];
 
-      // 같은 구간이 이미 있으면 기존 기록 제거
       const filtered = recent.filter(
-        (recentItem) => recentItem.segment_id !== item.segment_id
+        (recentItem) =>
+          recentItem.segment_id !== item.segment_id
       );
 
-      // 가장 최근에 본 구간을 맨 앞으로
       const updated = [item, ...filtered].slice(0, 20);
 
       localStorage.setItem(
@@ -353,8 +541,10 @@ const [videosMap, setVideosMap] =
     saveRecentSegment(item);
   };
 
-  // 라이브러리에 저장된 구간 다시 열기
-  const handleOpenLibrarySegment = (item: SearchResultItem) => {
+  // 라이브러리에 저장된 구간 열기
+  const handleOpenLibrarySegment = (
+    item: SearchResultItem
+  ) => {
     stopPolling();
 
     selectedSegmentRef.current = item;
@@ -362,9 +552,7 @@ const [videosMap, setVideosMap] =
     setCurrentVideoId(item.video_id);
     saveRecentSegment(item);
 
-    // 검색 결과 영역에서도 현재 구간이 보이도록 설정
     setSearchResults([item]);
-
     setCurrentView('player');
 
     if (
@@ -375,7 +563,6 @@ const [videosMap, setVideosMap] =
     }
   };
 
-  // 홈으로 이동
   const handleNavigateHome = () => {
     stopPolling();
     setCurrentView('home');
@@ -388,7 +575,6 @@ const [videosMap, setVideosMap] =
     }
   };
 
-  // 영상 탐색 화면으로 이동
   const handleNavigateBrowse = () => {
     stopPolling();
     setCurrentView('browse');
@@ -401,7 +587,6 @@ const [videosMap, setVideosMap] =
     }
   };
 
-  // 로그인 화면으로 이동
   const handleNavigateAuth = () => {
     stopPolling();
     setCurrentView('auth');
@@ -414,7 +599,6 @@ const [videosMap, setVideosMap] =
     }
   };
 
-  // 라이브러리 화면으로 이동
   const handleNavigateLibrary = () => {
     stopPolling();
     setCurrentView('library');
@@ -427,7 +611,6 @@ const [videosMap, setVideosMap] =
     }
   };
 
-  // 로그인 성공
   const handleLoginSuccess = (loggedInUser: User) => {
     stopPolling();
     setUser(loggedInUser);
@@ -438,7 +621,6 @@ const [videosMap, setVideosMap] =
     }
   };
 
-  // 로그아웃
   const handleLogout = () => {
     stopPolling();
     localStorage.removeItem('pinpoint-user');
@@ -450,8 +632,18 @@ const [videosMap, setVideosMap] =
     }
   };
 
-// 현재 사용자가 선택한 실제 영상
-const activeVideo = videosMap[currentVideoId];
+  const activeVideo = videosMap[currentVideoId];
+
+  // 재생 중인 영상의 AI 검색 구간만 전달
+  const currentVideoResults = searchResults.filter(
+    (item) =>
+      item.video_id === currentVideoId ||
+      (
+        activeVideo?.youtube_video_id !== undefined &&
+        videosMap[item.video_id]?.youtube_video_id ===
+          activeVideo.youtube_video_id
+      )
+  );
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
@@ -490,15 +682,18 @@ const activeVideo = videosMap[currentVideoId];
           <VideoSearchListView
             results={searchResults}
             videosMap={videosMap}
+            youtubeVideoIds={youtubeVideoIds}
+            analysisStatuses={analysisStatuses}
             isLoading={isLoading || isAnalyzing}
             searchQuery={searchQuery}
             onSelectResult={handleSelectResult}
+            onAnalyzeVideo={handleAnalyzeVideo}
           />
-        ) : (
+        ) : activeVideo ? (
           <PlayerView
             currentVideo={activeVideo}
             selectedSegment={selectedSegment}
-            searchResults={searchResults}
+            searchResults={currentVideoResults}
             videosMap={videosMap}
             isLoading={isLoading || isAnalyzing}
             searchQuery={searchQuery}
@@ -506,6 +701,10 @@ const activeVideo = videosMap[currentVideoId];
             onNavigateHome={handleNavigateHome}
             onSelectSuggestion={(rec) => executeSearch(rec)}
           />
+        ) : (
+          <div className="p-8 text-center text-slate-600">
+            영상 정보를 불러올 수 없습니다.
+          </div>
         )
       )}
 
