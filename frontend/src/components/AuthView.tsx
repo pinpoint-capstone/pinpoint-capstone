@@ -8,6 +8,8 @@ import {
   User,
 } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 interface AuthViewProps {
   onNavigateHome: () => void;
   onLoginSuccess: (user: { name: string; email: string }) => void;
@@ -54,7 +56,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     if (mode === 'signup') {
       try {
         const response = await fetch(
-          'http://127.0.0.1:8000/api/auth/signup',
+          `${API_BASE_URL}/api/auth/signup`,
           {
             method: 'POST',
             headers: {
@@ -91,7 +93,7 @@ export const AuthView: React.FC<AuthViewProps> = ({
     // 로그인: 실제 백엔드 API 사용
     try {
       const response = await fetch(
-        'http://127.0.0.1:8000/api/auth/login',
+        `${API_BASE_URL}/api/auth/login`,
         {
           method: 'POST',
           headers: {

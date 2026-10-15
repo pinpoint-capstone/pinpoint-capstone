@@ -11,6 +11,8 @@ import {
 import { SearchResultItem, VideoMetadata } from '../types';
 import { formatTime } from '../utils/formatters';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 type LibraryTab = 'saved' | 'recent';
 
 interface LibraryViewProps {
@@ -63,7 +65,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         }
 
         const response = await fetch(
-          'http://127.0.0.1:8000/api/users/me/favorites',
+          `${API_BASE_URL}/api/users/me/favorites`,
           {
             method: 'GET',
             headers: {
@@ -174,7 +176,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       const responses = await Promise.all(
         ids.map((favoriteId) =>
           fetch(
-            `http://127.0.0.1:8000/api/users/me/favorites/${favoriteId}`,
+            `${API_BASE_URL}/api/users/me/favorites/${favoriteId}`,
             {
               method: 'DELETE',
               headers: {
