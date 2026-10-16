@@ -134,13 +134,29 @@ export default function App() {
     const handlePopState = () => {
       const path = window.location.pathname;
 
-      if (path !== '/search') {
+      if (path !== '/search' && path !== '/search/video') {
         stopPolling();
       }
 
       if (path === '/browse') {
+        selectedSegmentRef.current = null;
+        setSelectedSegment(null);
         setCurrentView('browse');
       } else if (path === '/search') {
+        // 상세 화면에서 뒤로 가면 기존 검색 결과 목록으로 복귀
+        selectedSegmentRef.current = null;
+        setSelectedSegment(null);
+        setCurrentView('player');
+      } else if (path === '/search/video') {
+        // 브라우저 앞으로 가기 시 이전에 선택한 영상 구간 복원
+        const historySegment = window.history.state?.selectedSegment as
+          | SearchResultItem
+          | undefined;
+        if (historySegment) {
+          selectedSegmentRef.current = historySegment;
+          setSelectedSegment(historySegment);
+          setCurrentVideoId(historySegment.video_id);
+        }
         setCurrentView('player');
       } else if (path === '/login') {
         setCurrentView('auth');
@@ -539,6 +555,17 @@ export default function App() {
     setSelectedSegment(item);
     setCurrentVideoId(item.video_id);
     saveRecentSegment(item);
+
+    // 목록과 상세 화면의 방문 기록을 분리해 브라우저 뒤로 가기 지원
+    if (window.location.pathname === '/search/video') {
+      window.history.replaceState({ selectedSegment: item }, '', '/search/video');
+    } else {
+      // 검색 결과가 화면에 보이지만 URL이 /search가 아닌 경우도 복구
+      if (window.location.pathname !== '/search') {
+        window.history.pushState(null, '', '/search');
+      }
+      window.history.pushState({ selectedSegment: item }, '', '/search/video');
+    }
   };
 
   // 라이브러리에 저장된 구간 열기
@@ -555,11 +582,9 @@ export default function App() {
     setSearchResults([item]);
     setCurrentView('player');
 
-    if (
-      typeof window !== 'undefined' &&
-      window.location.pathname !== '/search'
-    ) {
-      window.history.pushState(null, '', '/search');
+    if (typeof window !== 'undefined') {
+      // 라이브러리에서 열 때도 이전 화면으로 돌아갈 수 있도록 상세 기록 추가
+      window.history.pushState({ selectedSegment: item }, '', '/search/video');
     }
   };
 

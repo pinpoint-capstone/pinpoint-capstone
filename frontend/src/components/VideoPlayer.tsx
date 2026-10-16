@@ -202,6 +202,8 @@ const playerMount = document.createElement('div');
 container.appendChild(playerMount);
 
 createdPlayer = new YT.Player(playerMount, {
+          width: '100%',
+          height: '100%',
           videoId: video.youtube_video_id!,
           playerVars: {
             autoplay: 0,
@@ -600,7 +602,7 @@ const handleSaveSegment = async () => {
             <div
               key={video.youtube_video_id}
               ref={youtubeContainerRef}
-              className="w-full h-full"
+              className="absolute inset-0 w-full h-full [&_iframe]:!w-full [&_iframe]:!h-full"
             />
           </div>
         ) : (
