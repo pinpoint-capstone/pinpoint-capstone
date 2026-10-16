@@ -624,6 +624,10 @@ export default function App() {
   const handleLogout = () => {
     stopPolling();
     localStorage.removeItem('pinpoint-user');
+    localStorage.removeItem('pinpoint-access-token');
+    localStorage.removeItem('pinpoint-refresh-token');
+    localStorage.removeItem('pinpoint-saved-segments');
+    localStorage.removeItem('pinpoint-recent-segments');
     setUser(null);
     setCurrentView('home');
 
