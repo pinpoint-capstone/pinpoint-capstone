@@ -459,6 +459,10 @@ def create_search_router(get_current_user) -> APIRouter:
                         status = new_status
                     if started:
                         budget -= 1
+                if status == "PENDING":
+                    # 실제로 분석이 시작되지 않은 PENDING은 '분석 중'이 아니라 '분석 전'으로 알려 줌
+                    # (그래야 화면에서 클릭해서 분석할 수 있고, 로딩 표시가 끝없이 돌지 않음)
+                    status = "NOT_ANALYZED"
                 item = {"youtube_video_id": yid, "status": status}
                 if row:  # 목록에 썸네일/제목을 바로 보여줄 수 있게 함
                     item["title"] = row.get("title")
