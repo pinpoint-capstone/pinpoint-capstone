@@ -41,6 +41,11 @@ def _retry(fn, tries: int = 3, delay: float = 0.6):
             time.sleep(delay * (i + 1))
 
 
+def _run(builder):
+    """Supabase 쿼리를 실행하되, 연결이 잠깐 끊기면 다시 시도합니다."""
+    return _retry(builder.execute)
+
+
 def _usable(feat) -> bool:
     """진짜 모드는 같은 모델 버전만, 가짜 모드는 이미 분석된 기록을 그대로 인정."""
     return bool(feat) and (not USE_REAL_AI or feat.get("model_version") == MODEL_VERSION)
@@ -49,13 +54,12 @@ def _usable(feat) -> bool:
 def reclaim_stale(video_id: str, minutes: int = 30) -> bool:
     """서버가 꺼지는 바람에 멈춘 PROCESSING을 PENDING으로 되돌립니다."""
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
-    res = (
+    res = _run(
         supabase.table("videos")
         .update({"status": "PENDING", "error_message": None})
         .eq("video_id", video_id)
         .eq("status", "PROCESSING")
         .lt("updated_at", cutoff)
-        .execute()
     )
     return bool(res.data)
 
@@ -135,7 +139,7 @@ def register_video(youtube_video_id, title, channel_name=None,
     if row:
         return row
     try:
-        res = supabase.table("videos").insert({
+        res = _run(supabase.table("videos").insert({
             "title": title,
             "youtube_video_id": youtube_video_id,
             "video_url": f"https://www.youtube.com/watch?v={youtube_video_id}",
@@ -144,7 +148,7 @@ def register_video(youtube_video_id, title, channel_name=None,
             "published_at": published_at,
             "source_type": "youtube",
             "status": "PENDING",
-        }).execute()
+        }))
         return res.data[0]
     except Exception:
         # 동시에 같은 영상을 등록한 경우(중복 방지 인덱스)
@@ -155,21 +159,33 @@ def register_video(youtube_video_id, title, channel_name=None,
 
 
 def set_status(video_id: str, status: str, error_message: str | None = None) -> None:
-    supabase.table("videos").update(
+    _run(supabase.table("videos").update(
         {"status": status, "error_message": error_message}
-    ).eq("video_id", video_id).execute()
+    ).eq("video_id", video_id))
 
 
 def claim(video_id: str) -> bool:
     """PENDING/FAILED일 때만 PROCESSING으로 바꿉니다. 성공한 한 요청만 분석을 시작합니다."""
-    res = (
+    res = _run(
         supabase.table("videos")
         .update({"status": "PROCESSING", "error_message": None})
         .eq("video_id", video_id)
         .in_("status", ["PENDING", "FAILED"])
-        .execute()
     )
     return bool(res.data)
+
+
+def count_processing(minutes: int = 30) -> int:
+    """지금 실제로 분석 중인(30분 안에 갱신된) 영상 수. 멈춘 PROCESSING은 세지 않습니다."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat()
+    res = _retry(lambda: (
+        supabase.table("videos")
+        .select("video_id", count="exact")
+        .eq("status", "PROCESSING")
+        .gte("updated_at", cutoff)
+        .execute()
+    ))
+    return res.count or 0
 
 
 def list_indexed(youtube_ids: list[str] | None = None, limit: int = 10) -> list[dict]:
@@ -246,9 +262,9 @@ def prepare(youtube_video_id: str, title: str, **meta) -> dict:
     feature_ready = _feature_ready(feat)
 
     if row["status"] == "INDEXED" and (subtitle_ready or feature_ready):
-        supabase.table("videos").update({
+        _run(supabase.table("videos").update({
             "last_used_at": _now()
-        }).eq("video_id", vid).execute()
+        }).eq("video_id", vid))
 
         return {
             "state": "READY",
@@ -350,21 +366,21 @@ def run_indexing(video_id: str, youtube_video_id: str) -> None:
                 f"{time.perf_counter() - t:.2f}s"
             )
 
-            supabase.table("video_features").delete() \
-                .eq("video_id", video_id).execute()
+            _run(supabase.table("video_features").delete()
+                 .eq("video_id", video_id))
 
-            supabase.table("video_features").insert({
+            _run(supabase.table("video_features").insert({
                 "video_id": video_id,
                 "feature_path": feature_path,
                 "model_version": MODEL_VERSION,
-            }).execute()
+            }))
 
         # 3) 분석 완료
-        supabase.table("videos").update({
+        _run(supabase.table("videos").update({
             "status": "INDEXED",
             "error_message": None,
             "last_used_at": _now(),
-        }).eq("video_id", video_id).execute()
+        }).eq("video_id", video_id))
 
         print(
             f"[timing] TOTAL {youtube_video_id}: "
