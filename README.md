@@ -63,6 +63,60 @@ PinPoint는 **장면 단위**까지 찾아줍니다.
 
 ---
 
+
+## 서비스 화면
+
+React, TypeScript, Vite를 기반으로 자연어 검색부터 영상 탐색, AI 검색 결과 확인, 구간 재생까지 이어지는 웹 인터페이스를 구현했습니다.
+
+### 1. 홈 화면
+
+<!-- ![홈 화면](docs/images/home.png) -->
+
+- 자연어 검색어 입력 및 추천 검색어 제공
+- 검색어 입력 시 관련 YouTube 영상 검색
+- 로그인 및 사용자 프로필 화면으로 이동
+
+### 2. YouTube 영상 검색
+
+<!-- ![영상 검색 화면](docs/images/search.png) -->
+
+- 검색어와 관련된 YouTube 영상 목록 표시
+- 영상 썸네일, 제목 등 주요 정보 제공
+- 원하는 영상 선택 시 플레이어 화면으로 이동
+- 뒤로 가기 시 이전 검색 결과 유지
+
+### 3. AI 검색 결과 및 구간 재생
+
+<!-- ![영상 플레이어 화면](docs/images/player.png) -->
+
+- YouTube 영상과 AI 검색 결과를 한 화면에 표시
+- 검색 결과별 시작·종료 시간 및 관련도 제공
+- 타임스탬프 클릭 시 해당 시점부터 영상 재생
+- 하나의 영상에서 검색된 여러 구간을 개별적으로 표시
+
+### 4. 로그인 및 내 라이브러리
+
+<!-- ![라이브러리 화면](docs/images/library.png) -->
+
+- 회원가입 및 로그인 화면
+- 관심 있는 영상 구간 저장 및 조회
+- 최근 본 구간 및 검색 기록 확인
+
+### 5. 프론트엔드 구현
+
+| 항목 | 구현 내용 |
+|---|---|
+| UI 개발 | React 컴포넌트 기반 화면 구성 |
+| 검색 연동 | FastAPI를 통한 YouTube 검색 및 AI 분석 결과 조회 |
+| 상태 관리 | 검색 결과, 선택 영상, 구간 및 화면 전환 상태 관리 |
+| 영상 재생 | YouTube 플레이어와 타임스탬프 기반 구간 재생 연동 |
+| UI 개선 | 플레이어 크기 및 화면 배치 최적화 |
+| 배포 | Vercel 배포 및 환경변수 기반 백엔드 연결 |
+
+**웹 서비스:** https://pinpoint-capstone.vercel.app
+
+---
+
 ## 동작 방식
 
 최종 검색 구조는 **Subtitle-first + Visual fallback** 입니다.
@@ -159,10 +213,21 @@ flowchart LR
 
 ```
 pinpoint-capstone/
-├── frontend/              # React 웹 클라이언트
+
+├── frontend/                       # React 웹 클라이언트
 │   └── src/
-│       ├── components/    # Home · 검색 결과 · 플레이어 · 라이브러리 · 로그인
-│       └── services/      # 백엔드 API 호출
+│       ├── App.tsx                 # 화면 전환 · 검색 상태 관리
+│       ├── components/
+│       │   ├── Header.tsx          # 헤더 · 내비게이션
+│       │   ├── HomeView.tsx        # 홈 화면 · 자연어 검색
+│       │   ├── VideoSearchListView.tsx # YouTube 검색 목록
+│       │   ├── PlayerView.tsx      # 영상 플레이어 화면
+│       │   ├── VideoPlayer.tsx     # 영상 재생 · 구간 이동
+│       │   └── SearchResultsList.tsx # AI 검색 결과
+│       ├── services/
+│       │   └── searchApi.ts       # 백엔드 검색 API 연동
+│       ├── types/                  # TypeScript 타입 정의
+│       └── data/                   # 개발용 Mock 데이터
 ├── backend/
 │   ├── main.py            # FastAPI 앱 · 인증 · 즐겨찾기 · 기록 API
 │   └── services/
