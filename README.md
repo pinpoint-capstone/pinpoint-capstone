@@ -70,7 +70,7 @@ React, TypeScript, Vite를 기반으로 자연어 검색부터 영상 탐색, AI
 
 ### 1. 홈 화면
 
-<!-- ![홈 화면](docs/images/home.png) -->
+<img width="1647" height="715" alt="image" src="https://github.com/user-attachments/assets/bb1b15aa-25f6-4935-9735-d4a5c3371624" />
 
 - 자연어 검색어 입력 및 추천 검색어 제공
 - 검색어 입력 시 관련 YouTube 영상 검색
@@ -78,7 +78,8 @@ React, TypeScript, Vite를 기반으로 자연어 검색부터 영상 탐색, AI
 
 ### 2. YouTube 영상 검색
 
-<!-- ![영상 검색 화면](docs/images/search.png) -->
+<img width="1535" height="856" alt="image" src="https://github.com/user-attachments/assets/dd8b0bde-edd4-482a-8038-62321ba76f31" />
+
 
 - 검색어와 관련된 YouTube 영상 목록 표시
 - 영상 썸네일, 제목 등 주요 정보 제공
@@ -87,7 +88,8 @@ React, TypeScript, Vite를 기반으로 자연어 검색부터 영상 탐색, AI
 
 ### 3. AI 검색 결과 및 구간 재생
 
-<!-- ![영상 플레이어 화면](docs/images/player.png) -->
+<img width="1722" height="820" alt="image" src="https://github.com/user-attachments/assets/c8b32fd5-5834-4855-a89c-667fc2ed87c4" />
+
 
 - YouTube 영상과 AI 검색 결과를 한 화면에 표시
 - 검색 결과별 시작·종료 시간 및 관련도 제공
@@ -96,7 +98,8 @@ React, TypeScript, Vite를 기반으로 자연어 검색부터 영상 탐색, AI
 
 ### 4. 로그인 및 내 라이브러리
 
-<!-- ![라이브러리 화면](docs/images/library.png) -->
+<img width="887" height="841" alt="image" src="https://github.com/user-attachments/assets/93fb3c94-fd81-4c4b-82c2-d92e406351e6" />
+
 
 - 회원가입 및 로그인 화면
 - 관심 있는 영상 구간 저장 및 조회
