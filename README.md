@@ -339,16 +339,6 @@ npm run dev                       # http://localhost:3000
 
 ---
 
-## 팀원
-
-| 박근령 | 김민선 | 김서연 | 김지연 |
-|:---:|:---:|:---:|:---:|
-| [@geunrryeong](https://github.com/geunrryeong) | [@welgrape386](https://github.com/welgrape386) | [@seoyeon0905](https://github.com/seoyeon0905) | [@jiyeonio](https://github.com/jiyeonio) |
-| **Frontend** | **Backend** | **영상처리 · AI** | **AI** |
-| 검색 · 결과 · 재생 화면<br>다중 영상 검색 연동 | API · DB 구축<br>분석 흐름 · 안정성 개선 | 영상 분할 · 자막 · 프레임 추출<br>MiniLM 한국어 Fine-tuning | Moment-DETR Scratch 학습<br>AI 검색 파이프라인 설계<br>성능 평가 · 최적화 |
-
----
-
 ## 참고
 
 - Moment-DETR: Lei et al., *QVHighlights: Detecting Moments and Highlights in Videos via Natural Language Queries*, NeurIPS 2021
